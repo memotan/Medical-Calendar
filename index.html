@@ -8,37 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #faf8f4;
-    font-family: 'Noto Serif JP', serif;
-    color: #2c2416;
-    min-height: 100vh;
-  }
+  body { background: #faf8f4; font-family: 'Noto Serif JP', serif; color: #2c2416; min-height: 100vh; }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-thumb { background: #e8e0d4; border-radius: 2px; }
   textarea, input, button { font-family: 'Noto Serif JP', serif; }
   textarea { resize: none; }
 
-  #app {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: 60px;
-  }
+  #app { display: flex; flex-direction: column; align-items: center; padding-bottom: 60px; }
+  .main-wrap { width: 100%; max-width: 560px; padding: 28px 20px 0; }
 
-  .main-wrap {
-    width: 100%;
-    max-width: 560px;
-    padding: 28px 20px 0;
-  }
-
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .header-sub { font-size: 10px; letter-spacing: 0.3em; color: #b5a99a; margin-bottom: 3px; }
   .header-title { font-size: 24px; font-family: 'Shippori Mincho', serif; font-weight: 700; }
   .header-btns { display: flex; gap: 6px; align-items: center; }
@@ -51,178 +30,121 @@
     transition: background 0.15s;
   }
   .nav-btn:hover { background: #f5ece9; }
-  .nav-btn-text {
-    width: auto; padding: 0 12px;
-    font-size: 10px; letter-spacing: 0.1em;
-  }
+  .nav-btn-text { width: auto; padding: 0 12px; font-size: 10px; letter-spacing: 0.1em; }
   .gear-btn {
-    margin-left: 4px;
-    width: 36px; height: 36px; border-radius: 50%;
+    margin-left: 4px; width: 36px; height: 36px; border-radius: 50%;
     border: 1px solid #e8e0d4; background: #fffef9;
     color: #7a6e5f; font-size: 17px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
   .gear-btn:hover { background: #f5ece9; }
 
-  /* Weekdays */
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    margin-bottom: 3px;
-  }
-  .weekday {
-    text-align: center; font-size: 10px; letter-spacing: 0.08em;
-    color: #b5a99a; padding: 3px 0; font-weight: 500;
-  }
+  .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 3px; }
+  .weekday { text-align: center; font-size: 10px; letter-spacing: 0.08em; color: #b5a99a; padding: 3px 0; font-weight: 500; }
   .weekday.sun { color: #c9614a; }
   .weekday.sat { color: #5a7ab5; }
 
-  /* Calendar grid */
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
-    margin-bottom: 16px;
-  }
-  .cal-empty {}
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 16px; }
   .day-cell {
-    background: #fffef9;
-    border: 1px solid #e8e0d4;
-    border-radius: 8px;
-    padding: 5px 3px;
-    min-height: 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.12s;
+    background: #fffef9; border: 1px solid #e8e0d4; border-radius: 8px;
+    padding: 5px 3px; min-height: 64px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    position: relative; cursor: pointer; transition: background 0.12s;
   }
   .day-cell:hover { background: #f5ece9; }
   .day-cell.today { background: #f5ece9; border-color: #d4957e; }
   .day-cell.selected { border-color: #c9614a; }
-  .day-num {
-    font-size: 12px; font-weight: 400; line-height: 1; color: #2c2416;
-  }
+  .day-num { font-size: 12px; font-weight: 400; line-height: 1; color: #2c2416; }
   .day-num.today { font-weight: 700; color: #c9614a; }
   .day-num.sun { color: #c9614a; }
   .day-num.sat { color: #5a7ab5; }
-  .dots-wrap {
-    display: flex; flex-wrap: wrap; gap: 2px;
-    justify-content: center; width: 100%; padding: 0 2px;
-  }
-  .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-  }
-  .dot.yesterday { border-radius: 2px; opacity: 0.72; }
-  .note-dot {
-    width: 4px; height: 4px; border-radius: 50%;
-    background: #c9a84c;
-    position: absolute; bottom: 4px; right: 4px;
-  }
+  .dots-wrap { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; width: 100%; padding: 0 2px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .note-dot { width: 4px; height: 4px; border-radius: 50%; background: #c9a84c; position: absolute; bottom: 4px; right: 4px; }
 
-  /* Legend */
-  .legend {
-    padding: 10px 0 0;
-    border-top: 1px solid #e8e0d4;
-    display: flex; flex-wrap: wrap; gap: 7px 14px;
-  }
+  .legend { padding: 10px 0 0; border-top: 1px solid #e8e0d4; display: flex; flex-wrap: wrap; gap: 7px 14px; }
   .legend-item { display: flex; align-items: center; gap: 5px; }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .legend-dot.yesterday { border-radius: 2px; opacity: 0.72; }
   .legend-label { font-size: 10px; color: #7a6e5f; }
 
-  /* Overlay / Bottom sheet */
+  /* Bottom sheet */
   .overlay {
-    position: fixed; inset: 0;
-    background: rgba(44,36,22,0.38);
-    z-index: 100;
-    display: flex; align-items: flex-end; justify-content: center;
+    position: fixed; inset: 0; background: rgba(44,36,22,0.38);
+    z-index: 100; display: flex; align-items: flex-end; justify-content: center;
   }
   .sheet {
-    background: #fffef9;
-    border-radius: 20px 20px 0 0;
-    width: 100%; max-width: 560px;
-    max-height: 88vh; overflow-y: auto;
-    padding: 24px 20px 48px;
+    background: #fffef9; border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+    padding: 24px 20px 32px;
   }
-  .sheet-header {
-    display: flex; align-items: flex-start;
-    justify-content: space-between; margin-bottom: 20px;
-  }
+  .sheet-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
   .sheet-date { font-size: 10px; color: #b5a99a; letter-spacing: 0.15em; margin-bottom: 3px; }
   .sheet-title { font-size: 19px; font-family: 'Shippori Mincho', serif; font-weight: 700; }
   .close-btn {
     width: 30px; height: 30px; border-radius: 50%;
     border: 1px solid #e8e0d4; background: transparent;
     color: #7a6e5f; font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .close-btn:hover { background: #e8e0d4; }
 
-  .section-label {
-    font-size: 10px; letter-spacing: 0.2em; color: #7a6e5f;
-    margin-bottom: 10px;
-    display: flex; align-items: center; gap: 7px;
-  }
+  .section-label { font-size: 10px; letter-spacing: 0.2em; color: #7a6e5f; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
   .section-bar { width: 3px; height: 11px; border-radius: 2px; flex-shrink: 0; }
 
+  /* Counter pill */
   .pills-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
   .med-pill {
     display: flex; align-items: center; gap: 7px;
     padding: 9px 14px; border-radius: 24px;
-    border: 1.5px solid #e8e0d4;
-    background: transparent; color: #7a6e5f;
-    font-size: 13px; font-family: 'Noto Serif JP', serif;
-    font-weight: 400; cursor: pointer;
-    transition: all 0.15s;
+    border: 1.5px solid #e8e0d4; background: transparent; color: #7a6e5f;
+    font-size: 13px; cursor: pointer; transition: all 0.15s; user-select: none;
   }
-  .med-pill .pill-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #b5a99a; transition: background 0.15s; flex-shrink: 0;
+  .med-pill .pill-dot { width: 8px; height: 8px; border-radius: 50%; background: #b5a99a; flex-shrink: 0; }
+  .pill-count {
+    font-size: 11px; font-weight: 700;
+    background: rgba(0,0,0,0.08); border-radius: 10px;
+    padding: 1px 6px; margin-left: 2px;
   }
 
-  .hint-text { font-size: 10px; color: #b5a99a; margin-bottom: 8px; letter-spacing: 0.04em; }
   .divider { border-top: 1px dashed #e8e0d4; margin-bottom: 20px; }
-
   .diary-textarea {
     width: 100%; padding: 12px 14px; border-radius: 10px;
     border: 1px solid #e8e0d4; background: #faf8f4;
     color: #2c2416; font-size: 14px; line-height: 1.85; outline: none;
   }
   .diary-textarea:focus { border-color: #c9a84c; }
-  .char-count { text-align: right; font-size: 10px; color: #b5a99a; margin-top: 5px; }
+  .char-count { text-align: right; font-size: 10px; color: #b5a99a; margin-top: 5px; margin-bottom: 16px; }
+
+  /* Confirm close button */
+  .confirm-btn {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: #c9614a; color: white;
+    font-size: 14px; font-family: 'Noto Serif JP', serif;
+    letter-spacing: 0.1em; cursor: pointer; transition: background 0.15s;
+  }
+  .confirm-btn:hover { background: #b8503a; }
 
   /* Manager modal */
   .mgr-overlay {
-    position: fixed; inset: 0;
-    background: rgba(44,36,22,0.45);
-    z-index: 200;
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
+    position: fixed; inset: 0; background: rgba(44,36,22,0.45);
+    z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px;
   }
   .mgr-box {
     background: #fffef9; border-radius: 16px;
-    width: 100%; max-width: 400px;
-    max-height: 85vh; overflow-y: auto;
-    padding: 22px 18px;
+    width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; padding: 22px 18px;
   }
-  .mgr-header {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-bottom: 18px;
-  }
+  .mgr-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .mgr-title { font-size: 16px; font-family: 'Shippori Mincho', serif; font-weight: 700; }
 
-  .med-list-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 0; border-bottom: 1px solid #e8e0d4;
-  }
+  .med-list-item { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid #e8e0d4; }
   .med-list-dot { width: 11px; height: 11px; flex-shrink: 0; border-radius: 50%; }
   .med-list-name { flex: 1; font-size: 13px; }
-  .med-list-tag { font-size: 10px; color: #9b6bb5; margin-left: 6px; }
+  .edit-btn {
+    padding: 2px 10px; border-radius: 6px;
+    border: 1px solid #e8e0d4; background: transparent;
+    color: #5b8dd9; font-size: 11px; cursor: pointer;
+  }
+  .edit-btn:hover { background: #eef3fb; }
   .del-btn {
     padding: 2px 10px; border-radius: 6px;
     border: 1px solid #e8e0d4; background: transparent;
@@ -230,10 +152,7 @@
   }
   .del-btn:hover { background: #f5ece9; }
 
-  .add-box {
-    background: #faf8f4; border-radius: 10px;
-    padding: 14px; border: 1px solid #e8e0d4; margin-bottom: 0;
-  }
+  .add-box { background: #faf8f4; border-radius: 10px; padding: 14px; border: 1px solid #e8e0d4; margin-bottom: 0; }
   .add-box-label { font-size: 10px; letter-spacing: 0.15em; color: #7a6e5f; margin-bottom: 10px; }
   .add-input {
     width: 100%; padding: 9px 12px; border-radius: 8px;
@@ -241,61 +160,45 @@
     color: #2c2416; font-size: 13px; outline: none; margin-bottom: 10px;
   }
   .add-input:focus { border-color: #c9614a; }
-  .palette-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-  .pal-dot {
-    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
-    border: 2.5px solid transparent; transition: border 0.1s;
-  }
+  .palette-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .pal-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; transition: border 0.1s; }
   .pal-dot.selected { border-color: #2c2416; }
-
-  .toggle-row {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: #7a6e5f; cursor: pointer;
-    margin-bottom: 12px; user-select: none;
-  }
-  .toggle-track {
-    width: 36px; height: 20px; border-radius: 10px;
-    background: #e8e0d4; position: relative;
-    transition: background 0.2s; cursor: pointer; flex-shrink: 0;
-  }
-  .toggle-track.on { background: #9b6bb5; }
-  .toggle-thumb {
-    position: absolute; top: 3px; left: 3px;
-    width: 14px; height: 14px; border-radius: 50%;
-    background: white; transition: left 0.2s;
-  }
-  .toggle-track.on .toggle-thumb { left: 18px; }
 
   .add-btn {
     width: 100%; padding: 10px; border-radius: 8px; border: none;
     background: #e8e0d4; color: #b5a99a;
-    font-size: 13px; letter-spacing: 0.08em;
-    cursor: default; transition: background 0.15s;
+    font-size: 13px; letter-spacing: 0.08em; cursor: default; transition: background 0.15s;
   }
   .add-btn.active { background: #c9614a; color: white; cursor: pointer; }
   .add-btn.active:hover { background: #b8503a; }
 
-  .backup-box {
-    margin-top: 18px; background: #faf8f4; border-radius: 10px;
-    padding: 14px; border: 1px solid #e8e0d4;
-  }
+  .backup-box { margin-top: 18px; background: #faf8f4; border-radius: 10px; padding: 14px; border: 1px solid #e8e0d4; }
   .backup-label { font-size: 10px; letter-spacing: 0.15em; color: #7a6e5f; margin-bottom: 8px; }
   .backup-hint { font-size: 11px; color: #b5a99a; margin-bottom: 12px; line-height: 1.7; }
   .export-btn {
     width: 100%; padding: 10px; border-radius: 8px;
     border: 1px solid #e8e0d4; background: #fffef9;
-    color: #2c2416; font-size: 13px; letter-spacing: 0.06em;
-    cursor: pointer; margin-bottom: 8px;
+    color: #2c2416; font-size: 13px; letter-spacing: 0.06em; cursor: pointer; margin-bottom: 8px;
   }
   .export-btn:hover { background: #f5ece9; }
   .import-label {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     width: 100%; padding: 10px; border-radius: 8px;
     border: 1px dashed #e8e0d4; background: transparent;
-    color: #7a6e5f; font-size: 13px; letter-spacing: 0.06em;
-    cursor: pointer;
+    color: #7a6e5f; font-size: 13px; letter-spacing: 0.06em; cursor: pointer;
   }
   .import-label:hover { background: #f5ece9; }
+
+  /* Edit modal */
+  .edit-overlay {
+    position: fixed; inset: 0; background: rgba(44,36,22,0.5);
+    z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .edit-box {
+    background: #fffef9; border-radius: 16px;
+    width: 100%; max-width: 360px; padding: 22px 18px;
+  }
+  .edit-box-title { font-size: 15px; font-family: 'Shippori Mincho', serif; font-weight: 700; margin-bottom: 16px; }
 
   .hidden { display: none !important; }
 </style>
@@ -303,7 +206,6 @@
 <body>
 <div id="app">
   <div class="main-wrap">
-    <!-- Header -->
     <div class="header">
       <div>
         <div class="header-sub">服薬記録・日記</div>
@@ -316,29 +218,19 @@
         <button class="gear-btn" id="btn-gear">⚙</button>
       </div>
     </div>
-
-    <!-- Weekdays -->
     <div class="weekdays">
-      <div class="weekday sun">日</div>
-      <div class="weekday">月</div>
-      <div class="weekday">火</div>
-      <div class="weekday">水</div>
-      <div class="weekday">木</div>
-      <div class="weekday">金</div>
+      <div class="weekday sun">日</div><div class="weekday">月</div><div class="weekday">火</div>
+      <div class="weekday">水</div><div class="weekday">木</div><div class="weekday">金</div>
       <div class="weekday sat">土</div>
     </div>
-
-    <!-- Calendar grid -->
     <div class="cal-grid" id="cal-grid"></div>
-
-    <!-- Legend -->
     <div class="legend" id="legend"></div>
   </div>
 </div>
 
-<!-- Detail Panel (bottom sheet) -->
+<!-- Detail Panel -->
 <div class="overlay hidden" id="detail-overlay">
-  <div class="sheet" id="detail-sheet">
+  <div class="sheet">
     <div class="sheet-header">
       <div>
         <div class="sheet-date" id="detail-date"></div>
@@ -346,15 +238,14 @@
       </div>
       <button class="close-btn" id="detail-close">×</button>
     </div>
-    <div id="regular-meds-section"></div>
-    <div id="zolpidem-section"></div>
+    <div id="meds-section"></div>
     <div class="divider"></div>
     <div class="section-label">
-      <div class="section-bar" style="background:#c9a84c"></div>
-      日記・メモ
+      <div class="section-bar" style="background:#c9a84c"></div>日記・メモ
     </div>
     <textarea class="diary-textarea" id="diary-textarea" rows="5" placeholder="今日の体調や気になったことをメモしましょう…"></textarea>
     <div class="char-count" id="char-count">0 文字</div>
+    <button class="confirm-btn" id="detail-confirm">閉じる</button>
   </div>
 </div>
 
@@ -366,16 +257,10 @@
       <button class="close-btn" id="mgr-close">×</button>
     </div>
     <div id="med-list"></div>
-    <div class="add-box">
+    <div class="add-box" style="margin-top:16px">
       <div class="add-box-label">新しい薬を追加</div>
       <input class="add-input" id="new-med-name" placeholder="薬の名前を入力" type="text">
       <div class="palette-wrap" id="palette"></div>
-      <div class="toggle-row" id="zolpidem-toggle-row">
-        <div class="toggle-track" id="zolpidem-toggle">
-          <div class="toggle-thumb"></div>
-        </div>
-        睡眠導入剤（「昨晩」として前日に記録）
-      </div>
       <button class="add-btn" id="add-med-btn">追加する</button>
     </div>
     <div class="backup-box">
@@ -390,79 +275,79 @@
   </div>
 </div>
 
+<!-- Edit Med Modal -->
+<div class="edit-overlay hidden" id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-box-title">薬を編集</div>
+    <input class="add-input" id="edit-med-name" placeholder="薬の名前" type="text">
+    <div class="palette-wrap" id="edit-palette"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="del-btn" id="edit-cancel" style="flex:1;padding:10px;font-size:13px">キャンセル</button>
+      <button class="add-btn active" id="edit-save" style="flex:2;margin:0">保存する</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const PALETTE = ["#5b8dd9","#4a7c59","#c9614a","#9b6bb5","#c9a84c","#d4736a","#5ba6b5","#7a8f5b","#b56b8b","#6b7fb5"];
+const MAX_COUNT = 3;
 const DEFAULT_MEDS = [
-  { id: "m1", name: "ロキソプロフェン", color: "#5b8dd9", isZolpidem: false },
-  { id: "m2", name: "ゾルピデム", color: "#9b6bb5", isZolpidem: true },
+  { id: "m1", name: "ロキソプロフェン", color: "#5b8dd9" },
+  { id: "m2", name: "ゾルピデム", color: "#9b6bb5" },
 ];
 
-// ── State ──
 let meds = [], records = {};
 let curYear, curMonth, selectedKey = null;
-let newMedColor = PALETTE[0], newMedIsZolpidem = false;
+let newMedColor = PALETTE[0];
+let editingMedId = null, editMedColor = PALETTE[0];
 
 function loadState() {
-  try { meds = JSON.parse(localStorage.getItem("medcal_meds") || "null") || DEFAULT_MEDS; } catch { meds = DEFAULT_MEDS; }
+  try {
+    const saved = JSON.parse(localStorage.getItem("medcal_meds") || "null");
+    // Strip old isZolpidem field if present
+    meds = (saved || DEFAULT_MEDS).map(m => ({ id: m.id, name: m.name, color: m.color }));
+  } catch { meds = DEFAULT_MEDS; }
   try { records = JSON.parse(localStorage.getItem("medcal_records") || "{}"); } catch { records = {}; }
   const today = new Date();
   curYear = today.getFullYear();
   curMonth = today.getMonth();
 }
-
 function saveMeds() { try { localStorage.setItem("medcal_meds", JSON.stringify(meds)); } catch {} }
 function saveRecords() { try { localStorage.setItem("medcal_records", JSON.stringify(records)); } catch {} }
-
 function uid() { return "m" + Math.random().toString(36).slice(2, 8); }
+function dateKey(y, m, d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+function getRecord(key) { return records[key] || { meds: {}, note: "" }; }
 
-function dateKey(y, m, d) {
-  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+function getMedCount(dateK, medId) {
+  return records[dateK]?.meds?.[medId] || 0;
 }
-function prevDateKey(key) {
-  const d = new Date(key + "T00:00:00");
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-function getRecord(key) {
-  return records[key] || { meds: {}, note: "" };
-}
-function toggleMed(dateK, medId) {
+function incrementMed(dateK, medId) {
   if (!records[dateK]) records[dateK] = { meds: {}, note: "" };
-  records[dateK].meds[medId] = !records[dateK].meds[medId];
+  const cur = records[dateK].meds[medId] || 0;
+  records[dateK].meds[medId] = cur >= MAX_COUNT ? 0 : cur + 1;
   saveRecords();
 }
+
 function getDayDots(key) {
   const rec = records[key] || {};
   const dots = [];
-  meds.filter(m => !m.isZolpidem).forEach(med => {
-    if (rec.meds?.[med.id]) dots.push({ color: med.color, label: med.name, yesterday: false });
-  });
-  const prevKey = prevDateKey(key);
-  const prevRec = records[prevKey] || {};
-  meds.filter(m => m.isZolpidem).forEach(med => {
-    if (prevRec.meds?.[med.id]) dots.push({ color: med.color, label: "昨晩 " + med.name, yesterday: true });
+  meds.forEach(med => {
+    const count = rec.meds?.[med.id] || 0;
+    for (let i = 0; i < count; i++) dots.push({ color: med.color, label: med.name });
   });
   return dots;
 }
 
-// ── Calendar render ──
+// ── Calendar ──
 function renderCalendar() {
   const today = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
-
   document.getElementById("month-title").textContent = `${curYear}年 ${curMonth+1}月`;
-
   const first = new Date(curYear, curMonth, 1);
   const last = new Date(curYear, curMonth+1, 0);
   const grid = document.getElementById("cal-grid");
   grid.innerHTML = "";
-
-  // empty cells
-  for (let i = 0; i < first.getDay(); i++) {
-    const e = document.createElement("div");
-    grid.appendChild(e);
-  }
-
+  for (let i = 0; i < first.getDay(); i++) grid.appendChild(document.createElement("div"));
   for (let d = 1; d <= last.getDate(); d++) {
     const key = dateKey(curYear, curMonth, d);
     const wd = (first.getDay() + d - 1) % 7;
@@ -470,39 +355,33 @@ function renderCalendar() {
     const isSelected = key === selectedKey;
     const dots = getDayDots(key);
     const hasNote = records[key]?.note?.trim().length > 0;
-
     const cell = document.createElement("div");
     cell.className = "day-cell" + (isToday ? " today" : "") + (isSelected ? " selected" : "");
     cell.dataset.key = key;
-
     const numEl = document.createElement("span");
-    numEl.className = "day-num" + (isToday ? " today" : wd === 0 ? " sun" : wd === 6 ? " sat" : "");
+    numEl.className = "day-num" + (isToday ? " today" : wd===0 ? " sun" : wd===6 ? " sat" : "");
     numEl.textContent = d;
     cell.appendChild(numEl);
-
     if (dots.length > 0) {
       const wrap = document.createElement("div");
       wrap.className = "dots-wrap";
       dots.forEach(dot => {
         const el = document.createElement("div");
-        el.className = "dot" + (dot.yesterday ? " yesterday" : "");
+        el.className = "dot";
         el.style.background = dot.color;
         el.title = dot.label;
         wrap.appendChild(el);
       });
       cell.appendChild(wrap);
     }
-
     if (hasNote) {
       const nd = document.createElement("div");
       nd.className = "note-dot";
       cell.appendChild(nd);
     }
-
     cell.addEventListener("click", () => openDetail(key));
     grid.appendChild(cell);
   }
-
   renderLegend();
 }
 
@@ -512,111 +391,104 @@ function renderLegend() {
   meds.forEach(med => {
     const item = document.createElement("div");
     item.className = "legend-item";
-    const dot = document.createElement("div");
-    dot.className = "legend-dot" + (med.isZolpidem ? " yesterday" : "");
-    dot.style.background = med.color;
-    const label = document.createElement("span");
-    label.className = "legend-label";
-    label.textContent = med.isZolpidem ? `昨晩 ${med.name}` : med.name;
-    item.appendChild(dot);
-    item.appendChild(label);
+    item.innerHTML = `<div class="legend-dot" style="background:${med.color}"></div><span class="legend-label">${med.name}</span>`;
     legend.appendChild(item);
   });
-  // Note dot
-  const item = document.createElement("div");
-  item.className = "legend-item";
-  item.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#c9a84c"></div><span class="legend-label">日記あり</span>`;
-  legend.appendChild(item);
+  const noteItem = document.createElement("div");
+  noteItem.className = "legend-item";
+  noteItem.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#c9a84c"></div><span class="legend-label">日記あり</span>`;
+  legend.appendChild(noteItem);
 }
 
 // ── Detail panel ──
 function openDetail(key) {
   selectedKey = key;
   renderCalendar();
-
-  const rec = getRecord(key);
   document.getElementById("detail-date").textContent = key;
-
-  // Regular meds
-  const regSection = document.getElementById("regular-meds-section");
-  regSection.innerHTML = "";
-  const regularMeds = meds.filter(m => !m.isZolpidem);
-  if (regularMeds.length > 0) {
-    regSection.appendChild(makeSectionLabel("#4a7c59", "今日の服薬"));
-    const wrap = document.createElement("div");
-    wrap.className = "pills-wrap";
-    regularMeds.forEach(med => {
-      wrap.appendChild(makePill(med, rec.meds?.[med.id], null, () => {
-        toggleMed(key, med.id);
-        openDetail(key);
-      }));
-    });
-    regSection.appendChild(wrap);
-  }
-
-  // Zolpidem meds
-  const zolSection = document.getElementById("zolpidem-section");
-  zolSection.innerHTML = "";
-  const zolMeds = meds.filter(m => m.isZolpidem);
-  if (zolMeds.length > 0) {
-    zolSection.appendChild(makeSectionLabel("#9b6bb5", "昨晩の睡眠導入剤"));
-    const hint = document.createElement("div");
-    hint.className = "hint-text";
-    hint.textContent = `前夜（${prevDateKey(key)}）の記録として保存されます`;
-    zolSection.appendChild(hint);
-    const wrap = document.createElement("div");
-    wrap.className = "pills-wrap";
-    const pk = prevDateKey(key);
-    const pr = getRecord(pk);
-    zolMeds.forEach(med => {
-      wrap.appendChild(makePill(med, pr.meds?.[med.id], `昨晩 ${med.name}`, () => {
-        toggleMed(pk, med.id);
-        openDetail(key);
-      }));
-    });
-    zolSection.appendChild(wrap);
-  }
-
+  renderMedsPills(key);
+  const rec = getRecord(key);
   const textarea = document.getElementById("diary-textarea");
   textarea.value = rec.note || "";
   document.getElementById("char-count").textContent = textarea.value.length + " 文字";
-
   document.getElementById("detail-overlay").classList.remove("hidden");
 }
 
-function makeSectionLabel(color, text) {
-  const el = document.createElement("div");
-  el.className = "section-label";
-  el.innerHTML = `<div class="section-bar" style="background:${color}"></div>${text}`;
-  return el;
+function renderMedsPills(key) {
+  const section = document.getElementById("meds-section");
+  section.innerHTML = "";
+  if (meds.length === 0) return;
+  const label = document.createElement("div");
+  label.className = "section-label";
+  label.innerHTML = `<div class="section-bar" style="background:#4a7c59"></div>今日の服薬`;
+  section.appendChild(label);
+  const hint = document.createElement("div");
+  hint.style.cssText = "font-size:10px;color:#b5a99a;margin-bottom:10px;letter-spacing:0.04em";
+  hint.textContent = "タップで錠数を増やす（最大3錠）・長押しでリセット";
+  section.appendChild(hint);
+  const wrap = document.createElement("div");
+  wrap.className = "pills-wrap";
+  meds.forEach(med => {
+    const count = getMedCount(key, med.id);
+    const btn = document.createElement("button");
+    btn.className = "med-pill";
+    if (count > 0) {
+      btn.style.borderColor = med.color;
+      btn.style.background = med.color + "22";
+      btn.style.color = med.color;
+      btn.style.fontWeight = "700";
+    }
+    const dot = document.createElement("div");
+    dot.className = "pill-dot";
+    dot.style.background = count > 0 ? med.color : "#b5a99a";
+    btn.appendChild(dot);
+    btn.appendChild(document.createTextNode(med.name));
+    if (count > 0) {
+      const badge = document.createElement("span");
+      badge.className = "pill-count";
+      badge.textContent = `${count}錠`;
+      btn.appendChild(badge);
+    }
+    btn.addEventListener("click", () => {
+      incrementMed(key, med.id);
+      renderMedsPills(key);
+      renderCalendar();
+      document.querySelectorAll(".day-cell").forEach(el => {
+        if (el.dataset.key === key) el.classList.add("selected");
+      });
+    });
+    btn.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      if (!records[key]) records[key] = { meds: {}, note: "" };
+      records[key].meds[med.id] = 0;
+      saveRecords();
+      renderMedsPills(key);
+      renderCalendar();
+    });
+    // Long press for mobile
+    let pressTimer;
+    btn.addEventListener("touchstart", () => {
+      pressTimer = setTimeout(() => {
+        if (!records[key]) records[key] = { meds: {}, note: "" };
+        records[key].meds[med.id] = 0;
+        saveRecords();
+        renderMedsPills(key);
+        renderCalendar();
+      }, 600);
+    });
+    btn.addEventListener("touchend", () => clearTimeout(pressTimer));
+    btn.addEventListener("touchmove", () => clearTimeout(pressTimer));
+    wrap.appendChild(btn);
+  });
+  section.appendChild(wrap);
 }
 
-function makePill(med, taken, labelOverride, onClick) {
-  const btn = document.createElement("button");
-  btn.className = "med-pill";
-  const label = labelOverride || med.name;
-  if (taken) {
-    btn.style.borderColor = med.color;
-    btn.style.background = med.color + "22";
-    btn.style.color = med.color;
-    btn.style.fontWeight = "700";
-  }
-  const dot = document.createElement("div");
-  dot.className = "pill-dot";
-  dot.style.background = taken ? med.color : "#b5a99a";
-  btn.appendChild(dot);
-  btn.appendChild(document.createTextNode(label));
-  if (taken) {
-    const check = document.createElement("span");
-    check.style.fontSize = "12px";
-    check.textContent = "✓";
-    btn.appendChild(check);
-  }
-  btn.addEventListener("click", onClick);
-  return btn;
+function closeDetail() {
+  document.getElementById("detail-overlay").classList.add("hidden");
+  selectedKey = null;
+  renderCalendar();
 }
 
-// ── Med manager ──
+// ── Med Manager ──
 function renderMedManager() {
   const list = document.getElementById("med-list");
   list.innerHTML = "";
@@ -629,20 +501,18 @@ function renderMedManager() {
     const dot = document.createElement("div");
     dot.className = "med-list-dot";
     dot.style.background = med.color;
-    if (med.isZolpidem) dot.style.borderRadius = "3px";
     const name = document.createElement("span");
     name.className = "med-list-name";
     name.textContent = med.name;
-    if (med.isZolpidem) {
-      const tag = document.createElement("span");
-      tag.className = "med-list-tag";
-      tag.textContent = "昨晩タイプ";
-      name.appendChild(tag);
-    }
+    const editBtn = document.createElement("button");
+    editBtn.className = "edit-btn";
+    editBtn.textContent = "編集";
+    editBtn.addEventListener("click", () => openEditMed(med.id));
     const delBtn = document.createElement("button");
     delBtn.className = "del-btn";
     delBtn.textContent = "削除";
     delBtn.addEventListener("click", () => {
+      if (!confirm(`「${med.name}」を削除しますか？`)) return;
       meds = meds.filter(m => m.id !== med.id);
       saveMeds();
       renderMedManager();
@@ -650,36 +520,28 @@ function renderMedManager() {
     });
     item.appendChild(dot);
     item.appendChild(name);
+    item.appendChild(editBtn);
     item.appendChild(delBtn);
     list.appendChild(item);
   });
 
-  // Palette
   const palette = document.getElementById("palette");
   palette.innerHTML = "";
   PALETTE.forEach(col => {
     const dot = document.createElement("div");
     dot.className = "pal-dot" + (col === newMedColor ? " selected" : "");
     dot.style.background = col;
-    dot.addEventListener("click", () => {
-      newMedColor = col;
-      renderMedManager();
-    });
+    dot.addEventListener("click", () => { newMedColor = col; renderMedManager(); });
     palette.appendChild(dot);
   });
-
-  // Toggle
-  const track = document.getElementById("zolpidem-toggle");
-  track.className = "toggle-track" + (newMedIsZolpidem ? " on" : "");
 }
 
 function addMed() {
   const name = document.getElementById("new-med-name").value.trim();
   if (!name) return;
-  meds.push({ id: uid(), name, color: newMedColor, isZolpidem: newMedIsZolpidem });
+  meds.push({ id: uid(), name, color: newMedColor });
   saveMeds();
   document.getElementById("new-med-name").value = "";
-  newMedIsZolpidem = false;
   renderMedManager();
   renderCalendar();
   updateAddBtn();
@@ -687,13 +549,45 @@ function addMed() {
 
 function updateAddBtn() {
   const name = document.getElementById("new-med-name").value.trim();
-  const btn = document.getElementById("add-med-btn");
-  btn.className = "add-btn" + (name ? " active" : "");
+  document.getElementById("add-med-btn").className = "add-btn" + (name ? " active" : "");
+}
+
+// ── Edit Med ──
+function openEditMed(medId) {
+  editingMedId = medId;
+  const med = meds.find(m => m.id === medId);
+  if (!med) return;
+  editMedColor = med.color;
+  document.getElementById("edit-med-name").value = med.name;
+  renderEditPalette();
+  document.getElementById("edit-overlay").classList.remove("hidden");
+}
+
+function renderEditPalette() {
+  const palette = document.getElementById("edit-palette");
+  palette.innerHTML = "";
+  PALETTE.forEach(col => {
+    const dot = document.createElement("div");
+    dot.className = "pal-dot" + (col === editMedColor ? " selected" : "");
+    dot.style.background = col;
+    dot.addEventListener("click", () => { editMedColor = col; renderEditPalette(); });
+    palette.appendChild(dot);
+  });
+}
+
+function saveEditMed() {
+  const name = document.getElementById("edit-med-name").value.trim();
+  if (!name) return;
+  meds = meds.map(m => m.id === editingMedId ? { ...m, name, color: editMedColor } : m);
+  saveMeds();
+  renderMedManager();
+  renderCalendar();
+  document.getElementById("edit-overlay").classList.add("hidden");
 }
 
 // ── Export / Import ──
 function handleExport() {
-  const data = { version: 1, exportedAt: new Date().toISOString(), meds, records };
+  const data = { version: 2, exportedAt: new Date().toISOString(), meds, records };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -712,7 +606,7 @@ function handleImport(e) {
       const data = JSON.parse(ev.target.result);
       if (!data.meds || !data.records) throw new Error("invalid");
       if (!confirm(`バックアップ（${data.exportedAt?.slice(0,10) || "不明"}）を読み込みます。\n現在のデータは上書きされます。よろしいですか？`)) return;
-      meds = data.meds;
+      meds = data.meds.map(m => ({ id: m.id, name: m.name, color: m.color }));
       records = data.records;
       saveMeds();
       saveRecords();
@@ -727,7 +621,7 @@ function handleImport(e) {
   e.target.value = "";
 }
 
-// ── Event bindings ──
+// ── Events ──
 document.getElementById("btn-prev").addEventListener("click", () => {
   if (curMonth === 0) { curYear--; curMonth = 11; } else curMonth--;
   renderCalendar();
@@ -744,17 +638,10 @@ document.getElementById("btn-gear").addEventListener("click", () => {
   renderMedManager();
   document.getElementById("mgr-overlay").classList.remove("hidden");
 });
-document.getElementById("detail-close").addEventListener("click", () => {
-  document.getElementById("detail-overlay").classList.add("hidden");
-  selectedKey = null;
-  renderCalendar();
-});
+document.getElementById("detail-close").addEventListener("click", closeDetail);
+document.getElementById("detail-confirm").addEventListener("click", closeDetail);
 document.getElementById("detail-overlay").addEventListener("click", e => {
-  if (e.target === e.currentTarget) {
-    document.getElementById("detail-overlay").classList.add("hidden");
-    selectedKey = null;
-    renderCalendar();
-  }
+  if (e.target === e.currentTarget) closeDetail();
 });
 document.getElementById("mgr-close").addEventListener("click", () => {
   document.getElementById("mgr-overlay").classList.add("hidden");
@@ -770,24 +657,23 @@ document.getElementById("diary-textarea").addEventListener("input", e => {
   saveRecords();
   document.getElementById("char-count").textContent = e.target.value.length + " 文字";
   renderCalendar();
-  // Re-mark selected
   document.querySelectorAll(".day-cell").forEach(el => {
     if (el.dataset.key === key) el.classList.add("selected");
   });
 });
-document.getElementById("zolpidem-toggle").addEventListener("click", () => {
-  newMedIsZolpidem = !newMedIsZolpidem;
-  renderMedManager();
-});
 document.getElementById("new-med-name").addEventListener("input", updateAddBtn);
-document.getElementById("new-med-name").addEventListener("keydown", e => {
-  if (e.key === "Enter") addMed();
-});
+document.getElementById("new-med-name").addEventListener("keydown", e => { if (e.key === "Enter") addMed(); });
 document.getElementById("add-med-btn").addEventListener("click", addMed);
 document.getElementById("export-btn").addEventListener("click", handleExport);
 document.getElementById("import-input").addEventListener("change", handleImport);
+document.getElementById("edit-cancel").addEventListener("click", () => {
+  document.getElementById("edit-overlay").classList.add("hidden");
+});
+document.getElementById("edit-save").addEventListener("click", saveEditMed);
+document.getElementById("edit-overlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) document.getElementById("edit-overlay").classList.add("hidden");
+});
 
-// ── Init ──
 loadState();
 renderCalendar();
 </script>
