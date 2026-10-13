@@ -586,15 +586,31 @@ function saveEditMed() {
 }
 
 // ── Export / Import ──
-function handleExport() {
+async function handleExport() {
   const data = { version: 2, exportedAt: new Date().toISOString(), meds, records };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const text = JSON.stringify(data, null, 2);
+  const filename = `medcal_backup_${new Date().toISOString().slice(0,10)}.json`;
+
+  // スマホ（特にiOSのホーム画面アプリ）では download 属性が効かないため、共有シートを優先する
+  try {
+    const file = new File([text], filename, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "服薬カレンダーのバックアップ" });
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === "AbortError") return;
+  }
+
+  const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `medcal_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 function handleImport(e) {
