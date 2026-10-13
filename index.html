@@ -588,13 +588,39 @@ function saveEditMed() {
 // ── Export / Import ──
 function handleExport() {
   const data = { version: 2, exportedAt: new Date().toISOString(), meds, records };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `medcal_backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const json = JSON.stringify(data, null, 2);
+  const filename = `medcal_backup_${new Date().toISOString().slice(0,10)}.json`;
+  const blob = new Blob([json], { type: "application/json" });
+
+  // 共有シート対応端末（iPad / スマホ）ではファイル共有を優先
+  try {
+    const file = new File([blob], filename, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: filename }).catch(err => {
+        if (err && err.name !== "AbortError") fallbackDownload(blob, filename, json);
+      });
+      return;
+    }
+  } catch {}
+  fallbackDownload(blob, filename, json);
+}
+
+function fallbackDownload(blob, filename, json) {
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  } catch {
+    // 最終手段：JSONを新しいタブで表示してコピーできるようにする
+    const w = window.open("", "_blank");
+    if (w) { w.document.write("<pre></pre>"); w.document.querySelector("pre").textContent = json; }
+    else alert("エクスポートに失敗しました。ブラウザの設定をご確認ください。");
+  }
 }
 
 function handleImport(e) {
