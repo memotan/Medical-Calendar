@@ -592,6 +592,23 @@ function handleExport() {
   const filename = `medcal_backup_${new Date().toISOString().slice(0,10)}.json`;
   const blob = new Blob([json], { type: "application/json" });
 
+  // Capacitorアプリ内（WebView）ではblobダウンロードが使えないため、ネイティブのプラグインで保存・共有
+  const cap = window.Capacitor;
+  if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    const { Filesystem, Share } = cap.Plugins || {};
+    if (Filesystem && Share) {
+      Filesystem.writeFile({ path: filename, data: json, directory: "CACHE", encoding: "utf8" })
+        .then(r => Share.share({ title: filename, url: r.uri, dialogTitle: "バックアップを保存" }))
+        .catch(err => {
+          if (err && /cancel/i.test(String(err.message || err))) return;
+          alert("エクスポートに失敗しました：" + (err && err.message ? err.message : err));
+        });
+    } else {
+      alert("エクスポートには Capacitor の Filesystem と Share プラグインが必要です。\nnpm i @capacitor/filesystem @capacitor/share のあと npx cap sync を実行してください。");
+    }
+    return;
+  }
+
   // 共有シート対応端末（iPad / スマホ）ではファイル共有を優先
   try {
     const file = new File([blob], filename, { type: "application/json" });
