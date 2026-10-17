@@ -403,6 +403,8 @@ function renderLegend() {
 // ── Detail panel ──
 function openDetail(key) {
   selectedKey = key;
+  const [ky, km] = key.split("-").map(Number);
+  curYear = ky; curMonth = km - 1;
   renderCalendar();
   document.getElementById("detail-date").textContent = key;
   renderMedsPills(key);
@@ -643,6 +645,26 @@ document.getElementById("detail-confirm").addEventListener("click", closeDetail)
 document.getElementById("detail-overlay").addEventListener("click", e => {
   if (e.target === e.currentTarget) closeDetail();
 });
+// 左右スワイプで前日・翌日へ移動
+(function () {
+  const sheet = document.querySelector("#detail-overlay .sheet");
+  let sx = 0, sy = 0, tracking = false;
+  sheet.addEventListener("touchstart", e => {
+    tracking = e.touches.length === 1 && !e.target.closest("textarea");
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  sheet.addEventListener("touchend", e => {
+    if (!tracking || !selectedKey) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const [y, m, d] = selectedKey.split("-").map(Number);
+    const next = new Date(y, m - 1, d + (dx < 0 ? 1 : -1));
+    openDetail(dateKey(next.getFullYear(), next.getMonth(), next.getDate()));
+  }, { passive: true });
+  sheet.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
+})();
 document.getElementById("mgr-close").addEventListener("click", () => {
   document.getElementById("mgr-overlay").classList.add("hidden");
 });
