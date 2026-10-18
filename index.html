@@ -113,6 +113,23 @@
     color: #2c2416; font-size: 14px; line-height: 1.85; outline: none;
   }
   .diary-textarea:focus { border-color: #c9a84c; }
+  .photo-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .photo-item { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid #e8e0d4; }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block; }
+  .photo-del {
+    position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%;
+    border: none; background: rgba(44,36,22,0.65); color: #fff; font-size: 14px; line-height: 1; cursor: pointer;
+  }
+  .photo-add {
+    display: inline-block; padding: 9px 14px; border-radius: 10px; border: 1px dashed #c9a84c;
+    color: #8a6d1f; font-size: 13px; cursor: pointer; margin-bottom: 14px;
+  }
+  .photo-viewer {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .photo-viewer.hidden { display: none; }
+  .photo-viewer img { max-width: 100%; max-height: 100%; border-radius: 6px; }
   .char-count { text-align: right; font-size: 10px; color: #b5a99a; margin-top: 5px; margin-bottom: 16px; }
 
   /* Confirm close button */
@@ -245,9 +262,15 @@
     </div>
     <textarea class="diary-textarea" id="diary-textarea" rows="5" placeholder="今日の体調や気になったことをメモしましょう…"></textarea>
     <div class="char-count" id="char-count">0 文字</div>
+    <div class="photo-row" id="photo-row"></div>
+    <label class="photo-add">＋ 画像を添付
+      <input type="file" accept="image/*" multiple id="photo-input" style="display:none">
+    </label>
     <button class="confirm-btn" id="detail-confirm">閉じる</button>
   </div>
 </div>
+
+<div class="photo-viewer hidden" id="photo-viewer"><img id="photo-viewer-img" alt=""></div>
 
 <!-- Med Manager Modal -->
 <div class="mgr-overlay hidden" id="mgr-overlay">
@@ -313,7 +336,7 @@ function loadState() {
   curMonth = today.getMonth();
 }
 function saveMeds() { try { localStorage.setItem("medcal_meds", JSON.stringify(meds)); } catch {} }
-function saveRecords() { try { localStorage.setItem("medcal_records", JSON.stringify(records)); } catch {} }
+function saveRecords() { try { localStorage.setItem("medcal_records", JSON.stringify(records)); return true; } catch { return false; } }
 function uid() { return "m" + Math.random().toString(36).slice(2, 8); }
 function dateKey(y, m, d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
 function getRecord(key) { return records[key] || { meds: {}, note: "" }; }
@@ -354,7 +377,7 @@ function renderCalendar() {
     const isToday = key === todayKey;
     const isSelected = key === selectedKey;
     const dots = getDayDots(key);
-    const hasNote = records[key]?.note?.trim().length > 0;
+    const hasNote = records[key]?.note?.trim().length > 0 || records[key]?.images?.length > 0;
     const cell = document.createElement("div");
     cell.className = "day-cell" + (isToday ? " today" : "") + (isSelected ? " selected" : "");
     cell.dataset.key = key;
@@ -412,7 +435,92 @@ function openDetail(key) {
   const textarea = document.getElementById("diary-textarea");
   textarea.value = rec.note || "";
   document.getElementById("char-count").textContent = textarea.value.length + " 文字";
+  renderPhotos();
   document.getElementById("detail-overlay").classList.remove("hidden");
+}
+
+// ── Photos ──
+const PHOTO_MAX_SIZE = 1024, PHOTO_QUALITY = 0.7;
+
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, PHOTO_MAX_SIZE / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", PHOTO_QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("load")); };
+    img.src = url;
+  });
+}
+
+function renderPhotos() {
+  const row = document.getElementById("photo-row");
+  row.innerHTML = "";
+  const images = getRecord(selectedKey).images || [];
+  images.forEach((src, i) => {
+    const item = document.createElement("div");
+    item.className = "photo-item";
+    const img = document.createElement("img");
+    img.src = src;
+    img.addEventListener("click", () => {
+      document.getElementById("photo-viewer-img").src = src;
+      document.getElementById("photo-viewer").classList.remove("hidden");
+    });
+    const del = document.createElement("button");
+    del.className = "photo-del";
+    del.textContent = "×";
+    del.addEventListener("click", () => removePhoto(i));
+    item.appendChild(img);
+    item.appendChild(del);
+    row.appendChild(item);
+  });
+}
+
+function removePhoto(i) {
+  const rec = records[selectedKey];
+  if (!rec?.images) return;
+  if (!confirm("この画像を削除しますか？")) return;
+  rec.images.splice(i, 1);
+  if (rec.images.length === 0) delete rec.images;
+  saveRecords();
+  renderPhotos();
+  renderCalendar();
+}
+
+async function handlePhotoInput(e) {
+  const files = Array.from(e.target.files);
+  e.target.value = "";
+  const key = selectedKey;
+  if (!key || files.length === 0) return;
+  let failed = false;
+  for (const file of files) {
+    try {
+      const dataUrl = await resizeImage(file);
+      if (!records[key]) records[key] = { meds: {}, note: "" };
+      const rec = records[key];
+      rec.images = rec.images || [];
+      rec.images.push(dataUrl);
+      if (!saveRecords()) {
+        rec.images.pop();
+        if (rec.images.length === 0) delete rec.images;
+        alert("保存容量の上限に達しました。不要な画像を削除するか、JSONでバックアップしてください。");
+        break;
+      }
+    } catch { failed = true; }
+  }
+  if (failed) alert("読み込めない画像がありました。");
+  renderPhotos();
+  renderCalendar();
 }
 
 function renderMedsPills(key) {
@@ -682,6 +790,10 @@ document.getElementById("diary-textarea").addEventListener("input", e => {
   document.querySelectorAll(".day-cell").forEach(el => {
     if (el.dataset.key === key) el.classList.add("selected");
   });
+});
+document.getElementById("photo-input").addEventListener("change", handlePhotoInput);
+document.getElementById("photo-viewer").addEventListener("click", e => {
+  e.currentTarget.classList.add("hidden");
 });
 document.getElementById("new-med-name").addEventListener("input", updateAddBtn);
 document.getElementById("new-med-name").addEventListener("keydown", e => { if (e.key === "Enter") addMed(); });
