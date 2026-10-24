@@ -1,0 +1,13 @@
+{
+  "appId": "com.kei.medcal",
+  "appName": "MedCal",
+  "webDir": "www",
+  "backgroundColor": "#faf8f4",
+  "server": {
+    "url": "https://memotan.github.io/Medical-Calendar/",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#faf8f4"
+  }
+}

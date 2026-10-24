@@ -287,6 +287,15 @@
       <button class="add-btn" id="add-med-btn">追加する</button>
     </div>
     <div class="backup-box">
+      <div class="backup-label">サーバ同期（任意）</div>
+      <div class="backup-hint">服薬回数と薬の一覧だけをスプレッドシートに送ります。日記と写真は端末内に残ります。</div>
+      <input class="add-input" id="sync-url" placeholder="GAS の URL（https://script.google.com/…/exec）" type="url" autocomplete="off">
+      <input class="add-input" id="sync-token" placeholder="合言葉（GAS に設定した場合）" type="text" autocomplete="off">
+      <button class="export-btn" id="sync-now">今すぐ全件を送る</button>
+      <button class="export-btn" id="sync-restore">サーバの記録で服薬回数を復元</button>
+      <div class="backup-hint" id="sync-status" style="margin:4px 0 0"></div>
+    </div>
+    <div class="backup-box">
       <div class="backup-label">データのバックアップ・復元</div>
       <div class="backup-hint">改良版に差し替えるときも安心。JSONファイルとして保存・読み込みできます。</div>
       <button class="export-btn" id="export-btn">↓ JSONでエクスポート</button>
@@ -335,8 +344,13 @@ function loadState() {
   curYear = today.getFullYear();
   curMonth = today.getMonth();
 }
-function saveMeds() { try { localStorage.setItem("medcal_meds", JSON.stringify(meds)); } catch {} }
-function saveRecords() { try { localStorage.setItem("medcal_records", JSON.stringify(records)); return true; } catch { return false; } }
+function saveMeds() { try { localStorage.setItem("medcal_meds", JSON.stringify(meds)); } catch {} scheduleSync(); }
+function saveRecords() {
+  let ok = true;
+  try { localStorage.setItem("medcal_records", JSON.stringify(records)); } catch { ok = false; }
+  if (ok) scheduleSync();
+  return ok;
+}
 function uid() { return "m" + Math.random().toString(36).slice(2, 8); }
 function dateKey(y, m, d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
 function getRecord(key) { return records[key] || { meds: {}, note: "" }; }
@@ -774,6 +788,102 @@ function handleImport(e) {
   e.target.value = "";
 }
 
+// ── Server sync ──
+// 端末内（localStorage）が正本。服薬回数と薬の一覧だけを GAS へ裏で送る。日記と写真は送らない。
+// 送った内容は medcal_sync_state に覚え、変わった日だけを送る（日記の入力では通信しない）。
+const SYNC_URL_KEY = "medcal_gas_url", SYNC_TOKEN_KEY = "medcal_gas_token", SYNC_STATE_KEY = "medcal_sync_state";
+let syncTimer = null, syncBusy = false, syncRetry = null;
+
+function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+function setSyncStatus(t) { const el = document.getElementById("sync-status"); if (el) el.textContent = t; }
+
+function countsOf(rec) {
+  const o = {};
+  for (const [id, c] of Object.entries((rec && rec.meds) || {})) if (c > 0) o[id] = c;
+  return o;
+}
+function sigOf(counts) { return Object.keys(counts).sort().map(k => k + ":" + counts[k]).join(","); }
+function loadSyncState() { try { return JSON.parse(lsGet(SYNC_STATE_KEY) || "{}"); } catch { return {}; } }
+
+async function syncCall(body) {
+  const url = lsGet(SYNC_URL_KEY);
+  if (!url) throw new Error("GAS の URL が未設定です");
+  // Content-Type を付けない（付けると CORS のプリフライトが飛び、GAS が応答できない）
+  const res = await fetch(url, { method: "POST", body: JSON.stringify({ ...body, token: lsGet(SYNC_TOKEN_KEY) }) });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || "不明なエラー");
+  return json.data;
+}
+
+function scheduleSync() {
+  if (!lsGet(SYNC_URL_KEY)) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => flushSync(false), 3000);
+}
+
+async function flushSync(force) {
+  if (!lsGet(SYNC_URL_KEY) || syncBusy) return;
+  syncBusy = true;
+  clearTimeout(syncRetry);
+  try {
+    const st = force ? {} : loadSyncState();
+    const sentDays = st.days || {};
+    const medsSig = JSON.stringify(meds.map(m => [m.id, m.name, m.color]));
+    const days = {}, sigs = {};
+    for (const d of new Set([...Object.keys(records), ...Object.keys(sentDays)])) {
+      const counts = countsOf(records[d]), sig = sigOf(counts);
+      if (sig !== (sentDays[d] || "")) { days[d] = counts; sigs[d] = sig; }
+    }
+    const medsChanged = st.meds !== medsSig;
+    if (!medsChanged && !Object.keys(days).length) { if (force) setSyncStatus("送るものはありません（同期済み）"); return; }
+    setSyncStatus("同期中…");
+    await syncCall({ action: "sync", meds: medsChanged ? meds : undefined, days: Object.keys(days).length ? days : undefined });
+    const next = { meds: medsSig, days: { ...sentDays, ...sigs } };
+    lsSet(SYNC_STATE_KEY, JSON.stringify(next));
+    const t = new Date();
+    setSyncStatus(`同期しました（${t.getHours()}:${String(t.getMinutes()).padStart(2, "0")}・${Object.keys(days).length}日分）`);
+  } catch (err) {
+    setSyncStatus("同期に失敗：" + (err && err.message ? err.message : err) + "（あとで自動で再試行します）");
+    syncRetry = setTimeout(() => flushSync(false), 60000);
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function restoreFromServer() {
+  try {
+    setSyncStatus("取得中…");
+    const data = await syncCall({ action: "get" });
+    const n = Object.keys(data.days || {}).length;
+    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で服薬回数を復元します。\n同じ日の服薬回数はサーバの内容で上書きされます（日記と写真は変わりません）。よろしいですか？`)) {
+      setSyncStatus(""); return;
+    }
+    if (data.meds.length) meds = data.meds.map(m => ({ id: m.id, name: m.name, color: m.color }));
+    for (const [d, counts] of Object.entries(data.days || {})) {
+      if (!records[d]) records[d] = { meds: {}, note: "" };
+      records[d].meds = { ...counts };
+    }
+    saveMeds(); saveRecords();
+    renderCalendar(); renderMedManager();
+    setSyncStatus(`復元しました（${n} 日分）`);
+  } catch (err) {
+    setSyncStatus("復元に失敗：" + (err && err.message ? err.message : err));
+  }
+}
+
+function setupSync() {
+  const url = document.getElementById("sync-url"), tok = document.getElementById("sync-token");
+  url.value = lsGet(SYNC_URL_KEY); tok.value = lsGet(SYNC_TOKEN_KEY);
+  url.addEventListener("change", () => { lsSet(SYNC_URL_KEY, url.value.trim()); lsSet(SYNC_STATE_KEY, ""); flushSync(true); });
+  tok.addEventListener("change", () => lsSet(SYNC_TOKEN_KEY, tok.value.trim()));
+  document.getElementById("sync-now").addEventListener("click", () => flushSync(true));
+  document.getElementById("sync-restore").addEventListener("click", restoreFromServer);
+  window.addEventListener("online", () => flushSync(false));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) flushSync(false); });
+  flushSync(false);
+}
+
 // ── Events ──
 document.getElementById("btn-prev").addEventListener("click", () => {
   if (curMonth === 0) { curYear--; curMonth = 11; } else curMonth--;
@@ -853,6 +963,7 @@ document.getElementById("edit-overlay").addEventListener("click", e => {
 
 loadState();
 renderCalendar();
+setupSync();
 </script>
 </body>
 </html>
