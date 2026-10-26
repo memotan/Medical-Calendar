@@ -288,11 +288,11 @@
     </div>
     <div class="backup-box">
       <div class="backup-label">サーバ同期（任意）</div>
-      <div class="backup-hint">服薬回数と薬の一覧だけをスプレッドシートに送ります。日記と写真は端末内に残ります。</div>
+      <div class="backup-hint">薬の一覧・服薬回数・日記の本文をスプレッドシートに送ります（ホームの「昨日の日記」にも使います）。写真は端末内に残ります。</div>
       <input class="add-input" id="sync-url" placeholder="GAS の URL（https://script.google.com/…/exec）" type="url" autocomplete="off">
-      <input class="add-input" id="sync-token" placeholder="合言葉（GAS に設定した場合）" type="text" autocomplete="off">
+      <input class="add-input" id="sync-token" placeholder="合言葉（GAS の MEDCAL_TOKEN と同じもの・必須）" type="text" autocomplete="off">
       <button class="export-btn" id="sync-now">今すぐ全件を送る</button>
-      <button class="export-btn" id="sync-restore">サーバの記録で服薬回数を復元</button>
+      <button class="export-btn" id="sync-restore">サーバの記録から復元</button>
       <div class="backup-hint" id="sync-status" style="margin:4px 0 0"></div>
     </div>
     <div class="backup-box">
@@ -789,8 +789,9 @@ function handleImport(e) {
 }
 
 // ── Server sync ──
-// 端末内（localStorage）が正本。服薬回数と薬の一覧だけを GAS へ裏で送る。日記と写真は送らない。
-// 送った内容は medcal_sync_state に覚え、変わった日だけを送る（日記の入力では通信しない）。
+// 端末内（localStorage）が正本。薬の一覧・服薬回数・日記の本文を GAS へ裏で送る。写真は送らない。
+// 送った内容の指紋を medcal_sync_state に覚え、変わった日だけを送る。
+// 日記は入力のたびに保存されるので、最後の入力から 3 秒あいてから送る。
 const SYNC_URL_KEY = "medcal_gas_url", SYNC_TOKEN_KEY = "medcal_gas_token", SYNC_STATE_KEY = "medcal_sync_state";
 let syncTimer = null, syncBusy = false, syncRetry = null;
 
@@ -803,7 +804,13 @@ function countsOf(rec) {
   for (const [id, c] of Object.entries((rec && rec.meds) || {})) if (c > 0) o[id] = c;
   return o;
 }
-function sigOf(counts) { return Object.keys(counts).sort().map(k => k + ":" + counts[k]).join(","); }
+function hashOf(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h + "/" + str.length; }
+function noteOf(rec) { const t = (rec && rec.note) || ""; return t.trim() ? t : ""; }
+// 服薬回数と日記の指紋。何も無い日は ""（送る必要がない）
+function sigOf(counts, note) {
+  const c = Object.keys(counts).sort().map(k => k + ":" + counts[k]).join(",");
+  return c || note ? c + "#" + (note ? hashOf(note) : "") : "";
+}
 function loadSyncState() { try { return JSON.parse(lsGet(SYNC_STATE_KEY) || "{}"); } catch { return {}; } }
 
 async function syncCall(body) {
@@ -832,8 +839,8 @@ async function flushSync(force) {
     const medsSig = JSON.stringify(meds.map(m => [m.id, m.name, m.color]));
     const days = {}, sigs = {};
     for (const d of new Set([...Object.keys(records), ...Object.keys(sentDays)])) {
-      const counts = countsOf(records[d]), sig = sigOf(counts);
-      if (sig !== (sentDays[d] || "")) { days[d] = counts; sigs[d] = sig; }
+      const counts = countsOf(records[d]), note = noteOf(records[d]), sig = sigOf(counts, note);
+      if (sig !== (sentDays[d] || "")) { days[d] = { meds: counts, note }; sigs[d] = sig; }
     }
     const medsChanged = st.meds !== medsSig;
     if (!medsChanged && !Object.keys(days).length) { if (force) setSyncStatus("送るものはありません（同期済み）"); return; }
@@ -855,14 +862,17 @@ async function restoreFromServer() {
   try {
     setSyncStatus("取得中…");
     const data = await syncCall({ action: "get" });
-    const n = Object.keys(data.days || {}).length;
-    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で服薬回数を復元します。\n同じ日の服薬回数はサーバの内容で上書きされます（日記と写真は変わりません）。よろしいですか？`)) {
+    const notes = data.notes || {};
+    const n = new Set([...Object.keys(data.days || {}), ...Object.keys(notes)]).size;
+    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で復元します。\n同じ日の服薬回数と日記は、サーバの内容で上書きされます（写真は変わりません）。よろしいですか？`)) {
       setSyncStatus(""); return;
     }
     if (data.meds.length) meds = data.meds.map(m => ({ id: m.id, name: m.name, color: m.color }));
-    for (const [d, counts] of Object.entries(data.days || {})) {
+    for (const d of new Set([...Object.keys(data.days || {}), ...Object.keys(notes)])) {
       if (!records[d]) records[d] = { meds: {}, note: "" };
-      records[d].meds = { ...counts };
+      // サーバにある項目だけを上書きする（サーバに無い日記を、端末内の日記ごと消さない）
+      if (data.days && d in data.days) records[d].meds = { ...data.days[d] };
+      if (d in notes) records[d].note = notes[d];
     }
     saveMeds(); saveRecords();
     renderCalendar(); renderMedManager();
