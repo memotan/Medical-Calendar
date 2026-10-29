@@ -1,8 +1,8 @@
 /**
- * MedCal 用 GAS（服薬回数の同期）
+ * MedCal 用 GAS（服薬回数・体重・日記の同期）
  *
  * 端末内（localStorage）が正本。アプリは服薬回数や日記が変わるたびに、裏でここへ送る。
- * 送るのは「薬の一覧」「日ごとの服薬回数」「日記の本文」。写真は端末内に残す。
+ * 送るのは「薬の一覧」「日ごとの服薬回数」「体重」「日記の本文」。写真は端末内に残す。
  * ホーム画面（Home Dashboard）は、ここから「昨日の日記」を読む。
  *
  * セットアップ:
@@ -17,14 +17,17 @@
  *   薬   … id, name, color, order
  *   服薬 … date(yyyy-MM-dd), medId, count, updatedAt
  *   日記 … date(yyyy-MM-dd), note, updatedAt
+ *   体重 … date(yyyy-MM-dd), kg, updatedAt（初回の体重送信時に自動で作られる）
  */
-const GAS_VERSION = '1.1.0';
+const GAS_VERSION = '1.2.0';
 const MEDS_SHEET = '薬';
 const LOG_SHEET = '服薬';
 const MEDS_HEADERS = ['id', 'name', 'color', 'order'];
 const LOG_HEADERS = ['date', 'medId', 'count', 'updatedAt'];
 const NOTES_SHEET = '日記';
 const NOTES_HEADERS = ['date', 'note', 'updatedAt'];
+const WEIGHT_SHEET = '体重';
+const WEIGHT_HEADERS = ['date', 'kg', 'updatedAt'];
 const NOTE_MAX = 40000;   // セルの上限（50000 字）に収める
 
 function doPost(e) {
@@ -100,8 +103,8 @@ function writeAll_(sh, headers, rows, textCols) {
 
 /**
  * meds: [{id,name,color}] を渡すと薬の一覧を丸ごと置き換える（省略可）
- * days: {'yyyy-MM-dd': {meds: {medId: count}, note: '日記'}} を渡すと、その日の服薬回数と日記を置き換える
- *       （meds が空・note が空なら、その日の記録を消す）
+ * days: {'yyyy-MM-dd': {meds: {medId: count}, note: '日記', weight: 62.5}} を渡すと、その日の服薬回数と日記を置き換える
+ *       （meds が空・note が空なら、その日の記録を消す）。weight は項目があるときだけ置き換える（null なら消す）
  */
 function sync_(meds, days) {
   var lock = LockService.getScriptLock();
@@ -141,6 +144,20 @@ function sync_(meds, days) {
       var byDate = function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; };
       writeAll_(log, LOG_HEADERS, keptLog.sort(byDate), [1, 2]);
       writeAll_(notes, NOTES_HEADERS, keptNotes.sort(byDate), [1, 2]);
+
+      // 体重は 'weight' の項目がある日だけ置き換える（項目を知らない古いアプリが体重を消さないように）
+      var wTargets = {}, hasW = false;
+      Object.keys(targets).forEach(function (d) { if ('weight' in targets[d]) { wTargets[d] = targets[d].weight; hasW = true; } });
+      if (hasW) {
+        var wsh = sheet_(WEIGHT_SHEET, WEIGHT_HEADERS, [1, 2]);
+        var keptW = readRows_(wsh).filter(function (r) { return r[0] && !(dateStr_(r[0]) in wTargets); })
+          .map(function (r) { return [dateStr_(r[0]), r[1], r[2]]; });
+        Object.keys(wTargets).forEach(function (d) {
+          var kg = Number(wTargets[d]);
+          if (wTargets[d] != null && isFinite(kg) && kg > 0) keptW.push([d, String(kg), now]);
+        });
+        writeAll_(wsh, WEIGHT_HEADERS, keptW.sort(byDate), [1, 2]);
+      }
     }
     return { meds: sentMeds, days: sentDays };
   } finally {
@@ -175,8 +192,18 @@ function getNotes_() {
   return notes;
 }
 
+function getWeights_() {
+  var weights = {};
+  readRows_(sheet_(WEIGHT_SHEET, WEIGHT_HEADERS, [1, 2])).forEach(function (r) {
+    var d = dateStr_(r[0]);
+    var kg = Number(r[1]);
+    if (d && isFinite(kg) && kg > 0) weights[d] = kg;
+  });
+  return weights;
+}
+
 /** 端末の復元用 */
-function getAll_() { return { meds: getMeds_(), days: getDays_(), notes: getNotes_() }; }
+function getAll_() { return { meds: getMeds_(), days: getDays_(), notes: getNotes_(), weights: getWeights_() }; }
 
 /** ホーム画面用。日記と、その日の薬ごとの回数。date 省略時は昨日 */
 function day_(date) {
@@ -189,6 +216,7 @@ function day_(date) {
   return {
     date: d,
     note: getNotes_()[d] || '',
+    weight: getWeights_()[d] || null,
     meds: getMeds_().map(function (m) { return { id: m.id, name: m.name, color: m.color, count: counts[m.id] || 0 }; })
   };
 }

@@ -60,6 +60,16 @@
   .day-num.sat { color: #5a7ab5; }
   .dots-wrap { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; width: 100%; padding: 0 2px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .day-weight { font-size: 9px; line-height: 1; color: #4a7c59; letter-spacing: 0; }
+  .weight-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+  .weight-input {
+    width: 120px; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid #e8e0d4; background: #faf8f4;
+    color: #2c2416; font-size: 15px; outline: none;
+  }
+  .weight-input:focus { border-color: #4a7c59; }
+  .weight-unit { font-size: 13px; color: #7a6e5f; }
+  .weight-prev { font-size: 11px; color: #b5a99a; margin-left: auto; }
   .note-dot { width: 4px; height: 4px; border-radius: 50%; background: #c9a84c; position: absolute; bottom: 4px; right: 4px; }
 
   .legend { padding: 10px 0 0; border-top: 1px solid #e8e0d4; display: flex; flex-wrap: wrap; gap: 7px 14px; }
@@ -258,6 +268,15 @@
     <div id="meds-section"></div>
     <div class="divider"></div>
     <div class="section-label">
+      <div class="section-bar" style="background:#4a7c59"></div>体重
+    </div>
+    <div class="weight-row">
+      <input class="weight-input" id="weight-input" type="number" inputmode="decimal" step="0.1" min="20" max="300" placeholder="例 62.5">
+      <span class="weight-unit">kg</span>
+      <span class="weight-prev" id="weight-prev"></span>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">
       <div class="section-bar" style="background:#c9a84c"></div>日記・メモ
     </div>
     <textarea class="diary-textarea" id="diary-textarea" rows="5" placeholder="今日の体調や気になったことをメモしましょう…"></textarea>
@@ -288,7 +307,7 @@
     </div>
     <div class="backup-box">
       <div class="backup-label">サーバ同期（任意）</div>
-      <div class="backup-hint">薬の一覧・服薬回数・日記の本文をスプレッドシートに送ります（ホームの「昨日の日記」にも使います）。写真は端末内に残ります。</div>
+      <div class="backup-hint">薬の一覧・服薬回数・体重・日記の本文をスプレッドシートに送ります（ホームの「昨日の日記」にも使います）。写真は端末内に残ります。</div>
       <input class="add-input" id="sync-url" placeholder="GAS の URL（https://script.google.com/…/exec）" type="url" autocomplete="off">
       <input class="add-input" id="sync-token" placeholder="合言葉（GAS の MEDCAL_TOKEN と同じもの・必須）" type="text" autocomplete="off">
       <button class="export-btn" id="sync-now">今すぐ全件を送る</button>
@@ -411,6 +430,13 @@ function renderCalendar() {
       });
       cell.appendChild(wrap);
     }
+    const w = records[key]?.weight;
+    if (typeof w === "number") {
+      const we = document.createElement("div");
+      we.className = "day-weight";
+      we.textContent = w.toFixed(1);
+      cell.appendChild(we);
+    }
     if (hasNote) {
       const nd = document.createElement("div");
       nd.className = "note-dot";
@@ -445,12 +471,54 @@ function openDetail(key) {
   renderCalendar();
   document.getElementById("detail-date").textContent = key;
   renderMedsPills(key);
+  renderWeight(key);
   const rec = getRecord(key);
   const textarea = document.getElementById("diary-textarea");
   textarea.value = rec.note || "";
   document.getElementById("char-count").textContent = textarea.value.length + " 文字";
   renderPhotos();
   document.getElementById("detail-overlay").classList.remove("hidden");
+}
+
+// ── Weight ──
+function lastWeightBefore(key) {
+  const prev = Object.keys(records).filter(k => k < key && typeof records[k].weight === "number").sort().pop();
+  return prev ? { key: prev, kg: records[prev].weight } : null;
+}
+function renderWeight(key) {
+  const w = records[key]?.weight;
+  document.getElementById("weight-input").value = typeof w === "number" ? w : "";
+  updateWeightPrev(key);
+}
+function updateWeightPrev(key) {
+  const el = document.getElementById("weight-prev");
+  const prev = lastWeightBefore(key);
+  const cur = records[key]?.weight;
+  if (!prev) { el.textContent = ""; return; }
+  const [, pm, pd] = prev.key.split("-").map(Number);
+  let t = `前回 ${prev.kg.toFixed(1)}kg（${pm}/${pd}）`;
+  if (typeof cur === "number") {
+    const diff = Math.round((cur - prev.kg) * 10) / 10;
+    t += ` ${diff > 0 ? "+" : ""}${diff.toFixed(1)}`;
+  }
+  el.textContent = t;
+}
+function handleWeightInput(e) {
+  const key = selectedKey;
+  if (!key) return;
+  const raw = e.target.value.trim();
+  const v = parseFloat(raw);
+  if (raw === "") {
+    if (records[key]) delete records[key].weight;
+  } else if (v >= 20 && v <= 300) {
+    if (!records[key]) records[key] = { meds: {}, note: "" };
+    records[key].weight = Math.round(v * 10) / 10;
+  } else {
+    return; // 入力途中（例：6 → 62）の値は保存しない
+  }
+  saveRecords();
+  updateWeightPrev(key);
+  renderCalendar();
 }
 
 // ── Photos ──
@@ -807,9 +875,12 @@ function countsOf(rec) {
 function hashOf(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h + "/" + str.length; }
 function noteOf(rec) { const t = (rec && rec.note) || ""; return t.trim() ? t : ""; }
 // 服薬回数と日記の指紋。何も無い日は ""（送る必要がない）
-function sigOf(counts, note) {
+function weightOf(rec) { return rec && typeof rec.weight === "number" ? rec.weight : null; }
+function sigOf(counts, note, weight) {
   const c = Object.keys(counts).sort().map(k => k + ":" + counts[k]).join(",");
-  return c || note ? c + "#" + (note ? hashOf(note) : "") : "";
+  const base = c || note ? c + "#" + (note ? hashOf(note) : "") : "";
+  // 体重が無い日は従来と同じ指紋のまま（導入時に全日を再送しない）
+  return weight == null ? base : (base || "#") + "@" + weight;
 }
 function loadSyncState() { try { return JSON.parse(lsGet(SYNC_STATE_KEY) || "{}"); } catch { return {}; } }
 
@@ -839,8 +910,8 @@ async function flushSync(force) {
     const medsSig = JSON.stringify(meds.map(m => [m.id, m.name, m.color]));
     const days = {}, sigs = {};
     for (const d of new Set([...Object.keys(records), ...Object.keys(sentDays)])) {
-      const counts = countsOf(records[d]), note = noteOf(records[d]), sig = sigOf(counts, note);
-      if (sig !== (sentDays[d] || "")) { days[d] = { meds: counts, note }; sigs[d] = sig; }
+      const counts = countsOf(records[d]), note = noteOf(records[d]), weight = weightOf(records[d]), sig = sigOf(counts, note, weight);
+      if (sig !== (sentDays[d] || "")) { days[d] = { meds: counts, note, weight }; sigs[d] = sig; }
     }
     const medsChanged = st.meds !== medsSig;
     if (!medsChanged && !Object.keys(days).length) { if (force) setSyncStatus("送るものはありません（同期済み）"); return; }
@@ -862,17 +933,18 @@ async function restoreFromServer() {
   try {
     setSyncStatus("取得中…");
     const data = await syncCall({ action: "get" });
-    const notes = data.notes || {};
-    const n = new Set([...Object.keys(data.days || {}), ...Object.keys(notes)]).size;
-    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で復元します。\n同じ日の服薬回数と日記は、サーバの内容で上書きされます（写真は変わりません）。よろしいですか？`)) {
+    const notes = data.notes || {}, weights = data.weights || {};
+    const n = new Set([...Object.keys(data.days || {}), ...Object.keys(notes), ...Object.keys(weights)]).size;
+    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で復元します。\n同じ日の服薬回数・体重・日記は、サーバの内容で上書きされます（写真は変わりません）。よろしいですか？`)) {
       setSyncStatus(""); return;
     }
     if (data.meds.length) meds = data.meds.map(m => ({ id: m.id, name: m.name, color: m.color }));
-    for (const d of new Set([...Object.keys(data.days || {}), ...Object.keys(notes)])) {
+    for (const d of new Set([...Object.keys(data.days || {}), ...Object.keys(notes), ...Object.keys(weights)])) {
       if (!records[d]) records[d] = { meds: {}, note: "" };
       // サーバにある項目だけを上書きする（サーバに無い日記を、端末内の日記ごと消さない）
       if (data.days && d in data.days) records[d].meds = { ...data.days[d] };
       if (d in notes) records[d].note = notes[d];
+      if (d in weights) records[d].weight = Number(weights[d]);
     }
     saveMeds(); saveRecords();
     renderCalendar(); renderMedManager();
@@ -954,6 +1026,7 @@ document.getElementById("diary-textarea").addEventListener("input", e => {
     if (el.dataset.key === key) el.classList.add("selected");
   });
 });
+document.getElementById("weight-input").addEventListener("input", handleWeightInput);
 document.getElementById("photo-input").addEventListener("change", handlePhotoInput);
 document.getElementById("photo-viewer").addEventListener("click", e => {
   e.currentTarget.classList.add("hidden");
