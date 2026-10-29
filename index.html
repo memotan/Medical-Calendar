@@ -70,6 +70,7 @@
   .weight-input:focus { border-color: #4a7c59; }
   .weight-unit { font-size: 13px; color: #7a6e5f; }
   .weight-prev { font-size: 11px; color: #b5a99a; margin-left: auto; }
+  .photo-dot { width: 4px; height: 4px; border-radius: 50%; background: #5ba6b5; position: absolute; bottom: 4px; left: 4px; }
   .note-dot { width: 4px; height: 4px; border-radius: 50%; background: #c9a84c; position: absolute; bottom: 4px; right: 4px; }
 
   .legend { padding: 10px 0 0; border-top: 1px solid #e8e0d4; display: flex; flex-wrap: wrap; gap: 7px 14px; }
@@ -410,7 +411,8 @@ function renderCalendar() {
     const isToday = key === todayKey;
     const isSelected = key === selectedKey;
     const dots = getDayDots(key);
-    const hasNote = records[key]?.note?.trim().length > 0 || records[key]?.images?.length > 0;
+    const hasNote = records[key]?.note?.trim().length > 0;
+    const hasPhoto = records[key]?.images?.length > 0;
     const cell = document.createElement("div");
     cell.className = "day-cell" + (isToday ? " today" : "") + (isSelected ? " selected" : "");
     cell.dataset.key = key;
@@ -442,6 +444,11 @@ function renderCalendar() {
       nd.className = "note-dot";
       cell.appendChild(nd);
     }
+    if (hasPhoto) {
+      const pd = document.createElement("div");
+      pd.className = "photo-dot";
+      cell.appendChild(pd);
+    }
     cell.addEventListener("click", () => openDetail(key));
     grid.appendChild(cell);
   }
@@ -461,6 +468,10 @@ function renderLegend() {
   noteItem.className = "legend-item";
   noteItem.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#c9a84c"></div><span class="legend-label">日記あり</span>`;
   legend.appendChild(noteItem);
+  const photoItem = document.createElement("div");
+  photoItem.className = "legend-item";
+  photoItem.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#5ba6b5"></div><span class="legend-label">写真あり</span>`;
+  legend.appendChild(photoItem);
 }
 
 // ── Detail panel ──
