@@ -2,8 +2,8 @@
 
 ## プロジェクト概要
 
-**MedCal** — 服薬記録と日記のカレンダー。**単一の `index.html`**（インライン CSS + バニラ JS、ビルド工程なし）。
-データは端末内の `localStorage` が正本。任意で、薬の一覧・服薬回数・日記の本文を GAS 経由でスプレッドシートに同期できる
+**MedCal** — 服薬記録・体重・日記のカレンダー。**単一の `index.html`**（インライン CSS + バニラ JS、ビルド工程なし）。
+データは端末内の `localStorage` が正本。任意で、薬の一覧・服薬回数・体重・日記の本文を GAS 経由でスプレッドシートに同期できる
 （**写真は送らない**）。同期した日記は、ホーム（Home Dashboard）の「昨日の日記」カードが読む。
 
 - テスト・lint・ビルドの仕組みはない。ブラウザで動作確認する
@@ -22,30 +22,37 @@
 
 ```js
 meds    = [{ id, name, color }]
-records = { 'yyyy-MM-dd': { meds: { [medId]: 回数 }, note: '日記', images: [dataURL, ...] } }
+records = { 'yyyy-MM-dd': { meds: { [medId]: 回数 }, note: '日記', images: [dataURL, ...], weight: 62.5 } }
 ```
 
-- `localStorage`: `medcal_meds` / `medcal_records` / `medcal_gas_url` / `medcal_gas_token` / `medcal_sync_state`
+- `localStorage`: `medcal_meds` / `medcal_records` / `medcal_gas_url` / `medcal_gas_token` / `medcal_sync_state` / `medcal_view`（月表示か週表示かの記憶）
+- `weight` は kg の数値（20〜300、小数 1 桁）。未記録の日はキー自体が無い。空にして保存すると削除する
 - 服薬回数の上限は `MAX_COUNT`（3）。タップするたびに 0→1→2→3→0
 - **写真は `records` の中に base64 の dataURL として入っている**（長辺 1024px・JPEG 品質 0.7 に縮小）。`localStorage` の容量（約 5MB）に限りがあり、超えると `saveRecords()` が `false` を返してアラートを出す。**写真を同期に含めないこと**（容量とプライバシーの面で）
 - **保存は必ず `saveMeds()` / `saveRecords()` を通す。** 同期の予約（`scheduleSync()`）がここに仕込んである
 - JSON のエクスポート / インポート（`handleExport` / `handleImport`）がある。**日記と写真もここに含まれる**。Capacitor では `@capacitor/filesystem` と `@capacitor/share` を使うので、この 2 つのプラグインを外さないこと
 
+## 表示
+
+ヘッダーの「週」ボタンで、月カレンダーと **1 週間の縦リスト**（日曜始まり）を切り替える。週表示では、各日に服薬・体重・日記の冒頭・写真の枚数を出し、タップすると詳細シートが開く。
+月カレンダーのセルには、体重（小さく）・日記の印（右下）・写真の印（左下）が出る。
+
 ## サーバ同期
 
 - 端末内が正本。服薬回数・日記が変わると、最後の変更から 3 秒後に裏で GAS へ送る。失敗しても端末内の保存には影響せず、60 秒後と次回起動時・オンライン復帰時に再試行する
-- 送った内容の指紋（服薬回数＋日記のハッシュ）を `medcal_sync_state` に覚え、**変わった日だけ**送る。日記は入力のたびに保存されるが、指紋が同じなら通信しない
+- 送った内容の指紋（服薬回数＋日記のハッシュ＋体重）を `medcal_sync_state` に覚え、**変わった日だけ**送る。日記は入力のたびに保存されるが、指紋が同じなら通信しない。**体重が無い日の指紋は、体重の機能を入れる前と同じ形のまま**にしてある（導入時に全日を再送しないため）。指紋の形を変えるときも、この性質を保つこと
 - **`fetch` に `Content-Type` を付けないこと。** 付けると CORS のプリフライトが飛び、GAS が応答できずに失敗する
+- `sync` には、日ごとに `{ meds, note, weight }` を送る。`weight` は**キーを常に送り、未記録なら `null`**（GAS はその日の体重を消す）。GAS は `weight` のキーがある日だけ体重を置き換える（項目を知らない古いアプリが体重を消さないように）
 - 「サーバの記録から復元」は、**サーバにある項目だけを上書きする**（サーバに無い日記・写真を、端末内のものごと消さない）
 - GAS は **`MEDCAL_TOKEN`（合言葉）が未設定だと `ping` 以外をすべて拒否する**。日記は私的なデータなので、この方針を緩めない
-- GAS のシート: `薬`（id, name, color, order）/ `服薬`（date, medId, count, updatedAt）/ `日記`（date, note, updatedAt）。日付・ID・日記の列は**テキスト書式**にして書き込む（`=` で始まる日記が数式にならないように。日付が日付値に変換されないように）。読むときは `getDisplayValues()`
-- GAS のアクション: `ping` / `sync` / `get` / `day`。`day` はホームが使う（日付を省略すると昨日）。**`day` の返り値の形を変えるときは、Home Dashboard 側も直す**
+- GAS のシート: `薬`（id, name, color, order）/ `服薬`（date, medId, count, updatedAt）/ `日記`（date, note, updatedAt）/ `体重`（date, kg, updatedAt。初回の同期で自動作成）。日付・ID・日記の列は**テキスト書式**にして書き込む（`=` で始まる日記が数式にならないように。日付が日付値に変換されないように）。読むときは `getDisplayValues()`
+- GAS のアクション: `ping` / `sync` / `get`（`meds` `days` `notes` `weights` を返す）/ `day`。`day` はホームが使う（日付を省略すると昨日。`{ date, note, weight, meds }`）。**`day` の返り値の形を変えるときは、Home Dashboard 側も直す**（ホームは `note` を使っている。項目を足すぶんには壊れない）
 
 ## バージョン
 
 | 定数 | 場所 | いつ上げるか |
 |---|---|---|
-| `GAS_VERSION` | `gas/Code.gs` | `Code.gs` を直したとき |
+| `GAS_VERSION` | `gas/Code.gs` | `Code.gs` を直したとき（現在 1.2.0。体重の同期には 1.2.0 以降が必要で、古い GAS でも体重以外の同期は動く） |
 
 アプリ側にバージョン定数はない（変更履歴は git で追う）。GAS を直したら、再デプロイまで行わないと反映されない。
 
