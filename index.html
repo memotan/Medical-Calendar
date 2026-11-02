@@ -18,9 +18,9 @@
   .main-wrap { width: 100%; max-width: 560px; padding: 28px 20px 0; }
 
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-  .header-sub { font-size: 10px; letter-spacing: 0.3em; color: #b5a99a; margin-bottom: 3px; }
+  .header-sub { font-size: 10px; letter-spacing: 0.3em; color: #b5a99a; margin-bottom: 3px; white-space: nowrap; }
   .header-title { font-size: 24px; font-family: 'Shippori Mincho', serif; font-weight: 700; }
-  .header-btns { display: flex; gap: 6px; align-items: center; }
+  .header-btns { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
 
   .nav-btn {
     width: 36px; height: 36px; border-radius: 50%;
@@ -30,7 +30,7 @@
     transition: background 0.15s;
   }
   .nav-btn:hover { background: #f5ece9; }
-  .nav-btn-text { width: auto; padding: 0 12px; font-size: 10px; letter-spacing: 0.1em; }
+  .nav-btn-text { width: auto; padding: 0 10px; font-size: 10px; letter-spacing: 0.05em; white-space: nowrap; }
   .gear-btn {
     margin-left: 4px; width: 36px; height: 36px; border-radius: 50%;
     border: 1px solid #e8e0d4; background: #fffef9;
@@ -60,6 +60,45 @@
   .day-num.sat { color: #5a7ab5; }
   .dots-wrap { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; width: 100%; padding: 0 2px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .day-weight { font-size: 9px; line-height: 1; color: #4a7c59; letter-spacing: 0; }
+  .weight-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+  .weight-input {
+    width: 120px; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid #e8e0d4; background: #faf8f4;
+    color: #2c2416; font-size: 15px; outline: none;
+  }
+  .weight-input:focus { border-color: #4a7c59; }
+  .weight-unit { font-size: 13px; color: #7a6e5f; }
+  .weight-prev { font-size: 11px; color: #b5a99a; margin-left: auto; }
+  .photo-dot { width: 4px; height: 4px; border-radius: 50%; background: #5ba6b5; position: absolute; bottom: 4px; left: 4px; }
+  /* Week view */
+  .week-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .week-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: #fffef9; border: 1px solid #e8e0d4; border-radius: 10px;
+    padding: 10px 12px; cursor: pointer; transition: background 0.12s;
+  }
+  .week-row:hover { background: #f5ece9; }
+  .week-row.today { background: #f5ece9; border-color: #d4957e; }
+  .week-row.selected { border-color: #c9614a; }
+  .week-date { width: 34px; flex-shrink: 0; text-align: center; padding-top: 1px; }
+  .week-date-num { font-size: 20px; font-family: 'Shippori Mincho', serif; font-weight: 700; line-height: 1.1; }
+  .week-date-wd { font-size: 10px; color: #b5a99a; margin-top: 2px; }
+  .week-date.sun .week-date-num, .week-date.sun .week-date-wd { color: #c9614a; }
+  .week-date.sat .week-date-num, .week-date.sat .week-date-wd { color: #5a7ab5; }
+  .week-date.today .week-date-num { color: #c9614a; }
+  .week-body { flex: 1; min-width: 0; }
+  .week-chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .week-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px; border: 1px solid; font-size: 11px; line-height: 1.5;
+  }
+  .week-chip i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+  .week-weight { font-size: 11px; color: #4a7c59; margin-left: auto; }
+  .week-note { font-size: 12px; line-height: 1.7; color: #5a4f40; margin-top: 5px; white-space: pre-wrap; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .week-photo { font-size: 10px; color: #3f8795; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .week-photo i { width: 5px; height: 5px; border-radius: 50%; background: #5ba6b5; display: block; }
+  .week-empty { font-size: 11px; color: #cfc6b8; }
   .note-dot { width: 4px; height: 4px; border-radius: 50%; background: #c9a84c; position: absolute; bottom: 4px; right: 4px; }
 
   .legend { padding: 10px 0 0; border-top: 1px solid #e8e0d4; display: flex; flex-wrap: wrap; gap: 7px 14px; }
@@ -230,17 +269,19 @@
       </div>
       <div class="header-btns">
         <button class="nav-btn" id="btn-prev">‹</button>
+        <button class="nav-btn nav-btn-text" id="btn-view">週</button>
         <button class="nav-btn nav-btn-text" id="btn-today">今月</button>
         <button class="nav-btn" id="btn-next">›</button>
         <button class="gear-btn" id="btn-gear">⚙</button>
       </div>
     </div>
-    <div class="weekdays">
+    <div class="weekdays" id="weekdays">
       <div class="weekday sun">日</div><div class="weekday">月</div><div class="weekday">火</div>
       <div class="weekday">水</div><div class="weekday">木</div><div class="weekday">金</div>
       <div class="weekday sat">土</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
+    <div class="week-list hidden" id="week-list"></div>
     <div class="legend" id="legend"></div>
   </div>
 </div>
@@ -256,6 +297,15 @@
       <button class="close-btn" id="detail-close">×</button>
     </div>
     <div id="meds-section"></div>
+    <div class="divider"></div>
+    <div class="section-label">
+      <div class="section-bar" style="background:#4a7c59"></div>体重
+    </div>
+    <div class="weight-row">
+      <input class="weight-input" id="weight-input" type="number" inputmode="decimal" step="0.1" min="20" max="300" placeholder="例 62.5">
+      <span class="weight-unit">kg</span>
+      <span class="weight-prev" id="weight-prev"></span>
+    </div>
     <div class="divider"></div>
     <div class="section-label">
       <div class="section-bar" style="background:#c9a84c"></div>日記・メモ
@@ -288,7 +338,7 @@
     </div>
     <div class="backup-box">
       <div class="backup-label">サーバ同期（任意）</div>
-      <div class="backup-hint">薬の一覧・服薬回数・日記の本文をスプレッドシートに送ります（ホームの「昨日の日記」にも使います）。写真は端末内に残ります。</div>
+      <div class="backup-hint">薬の一覧・服薬回数・体重・日記の本文をスプレッドシートに送ります（ホームの「昨日の日記」にも使います）。写真は端末内に残ります。</div>
       <input class="add-input" id="sync-url" placeholder="GAS の URL（https://script.google.com/…/exec）" type="url" autocomplete="off">
       <input class="add-input" id="sync-token" placeholder="合言葉（GAS の MEDCAL_TOKEN と同じもの・必須）" type="text" autocomplete="off">
       <button class="export-btn" id="sync-now">今すぐ全件を送る</button>
@@ -330,6 +380,8 @@ const DEFAULT_MEDS = [
 
 let meds = [], records = {};
 let curYear, curMonth, selectedKey = null;
+let viewMode = "month", weekStart = null;   // weekStart: その週の日曜日（Date）
+const WEEKDAY_JA = ["日","月","火","水","木","金","土"];
 let newMedColor = PALETTE[0];
 let editingMedId = null, editMedColor = PALETTE[0];
 
@@ -343,7 +395,11 @@ function loadState() {
   const today = new Date();
   curYear = today.getFullYear();
   curMonth = today.getMonth();
+  weekStart = startOfWeek(today);
+  viewMode = lsGet("medcal_view") === "week" ? "week" : "month";
 }
+function startOfWeek(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay()); }
+function keyOfDate(d) { return dateKey(d.getFullYear(), d.getMonth(), d.getDate()); }
 function saveMeds() { try { localStorage.setItem("medcal_meds", JSON.stringify(meds)); } catch {} scheduleSync(); }
 function saveRecords() {
   let ok = true;
@@ -377,6 +433,8 @@ function getDayDots(key) {
 
 // ── Calendar ──
 function renderCalendar() {
+  applyViewMode();
+  if (viewMode === "week") { renderWeek(); renderLegend(); return; }
   const today = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
   document.getElementById("month-title").textContent = `${curYear}年 ${curMonth+1}月`;
@@ -391,7 +449,8 @@ function renderCalendar() {
     const isToday = key === todayKey;
     const isSelected = key === selectedKey;
     const dots = getDayDots(key);
-    const hasNote = records[key]?.note?.trim().length > 0 || records[key]?.images?.length > 0;
+    const hasNote = records[key]?.note?.trim().length > 0;
+    const hasPhoto = records[key]?.images?.length > 0;
     const cell = document.createElement("div");
     cell.className = "day-cell" + (isToday ? " today" : "") + (isSelected ? " selected" : "");
     cell.dataset.key = key;
@@ -411,15 +470,129 @@ function renderCalendar() {
       });
       cell.appendChild(wrap);
     }
+    const w = records[key]?.weight;
+    if (typeof w === "number") {
+      const we = document.createElement("div");
+      we.className = "day-weight";
+      we.textContent = w.toFixed(1);
+      cell.appendChild(we);
+    }
     if (hasNote) {
       const nd = document.createElement("div");
       nd.className = "note-dot";
       cell.appendChild(nd);
     }
+    if (hasPhoto) {
+      const pd = document.createElement("div");
+      pd.className = "photo-dot";
+      cell.appendChild(pd);
+    }
     cell.addEventListener("click", () => openDetail(key));
     grid.appendChild(cell);
   }
   renderLegend();
+}
+
+function applyViewMode() {
+  const week = viewMode === "week";
+  document.getElementById("weekdays").classList.toggle("hidden", week);
+  document.getElementById("cal-grid").classList.toggle("hidden", week);
+  document.getElementById("week-list").classList.toggle("hidden", !week);
+  document.getElementById("btn-view").textContent = week ? "月" : "週";
+  document.getElementById("btn-today").textContent = week ? "今週" : "今月";
+}
+
+// ── Week view ──
+function renderWeek() {
+  const todayKey = keyOfDate(new Date());
+  const end = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+  document.getElementById("month-title").textContent =
+    `${weekStart.getMonth()+1}/${weekStart.getDate()} – ${end.getMonth()+1}/${end.getDate()}`;
+  document.querySelector(".header-sub").textContent = `${end.getFullYear()}年`;
+  const list = document.getElementById("week-list");
+  list.innerHTML = "";
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i);
+    const key = keyOfDate(date);
+    const rec = records[key] || {};
+    const row = document.createElement("div");
+    row.className = "week-row" + (key === todayKey ? " today" : "") + (key === selectedKey ? " selected" : "");
+    row.dataset.key = key;
+
+    const dcol = document.createElement("div");
+    dcol.className = "week-date" + (i === 0 ? " sun" : i === 6 ? " sat" : "") + (key === todayKey ? " today" : "");
+    const num = document.createElement("div");
+    num.className = "week-date-num";
+    num.textContent = date.getDate();
+    const wd = document.createElement("div");
+    wd.className = "week-date-wd";
+    wd.textContent = WEEKDAY_JA[i];
+    dcol.appendChild(num); dcol.appendChild(wd);
+
+    const body = document.createElement("div");
+    body.className = "week-body";
+    const chips = document.createElement("div");
+    chips.className = "week-chips";
+    let any = false;
+    meds.forEach(med => {
+      const c = rec.meds?.[med.id] || 0;
+      if (c <= 0) return;
+      any = true;
+      const chip = document.createElement("span");
+      chip.className = "week-chip";
+      chip.style.borderColor = med.color;
+      chip.style.background = med.color + "22";
+      chip.style.color = med.color;
+      const dot = document.createElement("i");
+      dot.style.background = med.color;
+      chip.appendChild(dot);
+      chip.appendChild(document.createTextNode(`${med.name} ${c}錠`));
+      chips.appendChild(chip);
+    });
+    if (!any) {
+      const e = document.createElement("span");
+      e.className = "week-empty";
+      e.textContent = "服薬なし";
+      chips.appendChild(e);
+    }
+    if (typeof rec.weight === "number") {
+      const w = document.createElement("span");
+      w.className = "week-weight";
+      w.textContent = `${rec.weight.toFixed(1)} kg`;
+      chips.appendChild(w);
+    }
+    body.appendChild(chips);
+    if (rec.note && rec.note.trim()) {
+      const n = document.createElement("div");
+      n.className = "week-note";
+      n.textContent = rec.note.trim();
+      body.appendChild(n);
+    }
+    if (rec.images?.length) {
+      const ph = document.createElement("div");
+      ph.className = "week-photo";
+      ph.appendChild(document.createElement("i"));
+      ph.appendChild(document.createTextNode(`写真 ${rec.images.length} 枚`));
+      body.appendChild(ph);
+    }
+    row.appendChild(dcol); row.appendChild(body);
+    row.addEventListener("click", () => openDetail(key));
+    list.appendChild(row);
+  }
+}
+
+function setViewMode(mode) {
+  if (mode === "week") {
+    const t = new Date();
+    const inCur = t.getFullYear() === curYear && t.getMonth() === curMonth;
+    weekStart = startOfWeek(inCur ? t : new Date(curYear, curMonth, 1));
+  } else {
+    curYear = weekStart.getFullYear(); curMonth = weekStart.getMonth();
+    document.querySelector(".header-sub").textContent = "服薬記録・日記";
+  }
+  viewMode = mode;
+  lsSet("medcal_view", mode);
+  renderCalendar();
 }
 
 function renderLegend() {
@@ -435,6 +608,10 @@ function renderLegend() {
   noteItem.className = "legend-item";
   noteItem.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#c9a84c"></div><span class="legend-label">日記あり</span>`;
   legend.appendChild(noteItem);
+  const photoItem = document.createElement("div");
+  photoItem.className = "legend-item";
+  photoItem.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#5ba6b5"></div><span class="legend-label">写真あり</span>`;
+  legend.appendChild(photoItem);
 }
 
 // ── Detail panel ──
@@ -442,15 +619,58 @@ function openDetail(key) {
   selectedKey = key;
   const [ky, km] = key.split("-").map(Number);
   curYear = ky; curMonth = km - 1;
+  weekStart = startOfWeek(new Date(ky, km - 1, Number(key.split("-")[2])));
   renderCalendar();
   document.getElementById("detail-date").textContent = key;
   renderMedsPills(key);
+  renderWeight(key);
   const rec = getRecord(key);
   const textarea = document.getElementById("diary-textarea");
   textarea.value = rec.note || "";
   document.getElementById("char-count").textContent = textarea.value.length + " 文字";
   renderPhotos();
   document.getElementById("detail-overlay").classList.remove("hidden");
+}
+
+// ── Weight ──
+function lastWeightBefore(key) {
+  const prev = Object.keys(records).filter(k => k < key && typeof records[k].weight === "number").sort().pop();
+  return prev ? { key: prev, kg: records[prev].weight } : null;
+}
+function renderWeight(key) {
+  const w = records[key]?.weight;
+  document.getElementById("weight-input").value = typeof w === "number" ? w : "";
+  updateWeightPrev(key);
+}
+function updateWeightPrev(key) {
+  const el = document.getElementById("weight-prev");
+  const prev = lastWeightBefore(key);
+  const cur = records[key]?.weight;
+  if (!prev) { el.textContent = ""; return; }
+  const [, pm, pd] = prev.key.split("-").map(Number);
+  let t = `前回 ${prev.kg.toFixed(1)}kg（${pm}/${pd}）`;
+  if (typeof cur === "number") {
+    const diff = Math.round((cur - prev.kg) * 10) / 10;
+    t += ` ${diff > 0 ? "+" : ""}${diff.toFixed(1)}`;
+  }
+  el.textContent = t;
+}
+function handleWeightInput(e) {
+  const key = selectedKey;
+  if (!key) return;
+  const raw = e.target.value.trim();
+  const v = parseFloat(raw);
+  if (raw === "") {
+    if (records[key]) delete records[key].weight;
+  } else if (v >= 20 && v <= 300) {
+    if (!records[key]) records[key] = { meds: {}, note: "" };
+    records[key].weight = Math.round(v * 10) / 10;
+  } else {
+    return; // 入力途中（例：6 → 62）の値は保存しない
+  }
+  saveRecords();
+  updateWeightPrev(key);
+  renderCalendar();
 }
 
 // ── Photos ──
@@ -807,9 +1027,12 @@ function countsOf(rec) {
 function hashOf(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h + "/" + str.length; }
 function noteOf(rec) { const t = (rec && rec.note) || ""; return t.trim() ? t : ""; }
 // 服薬回数と日記の指紋。何も無い日は ""（送る必要がない）
-function sigOf(counts, note) {
+function weightOf(rec) { return rec && typeof rec.weight === "number" ? rec.weight : null; }
+function sigOf(counts, note, weight) {
   const c = Object.keys(counts).sort().map(k => k + ":" + counts[k]).join(",");
-  return c || note ? c + "#" + (note ? hashOf(note) : "") : "";
+  const base = c || note ? c + "#" + (note ? hashOf(note) : "") : "";
+  // 体重が無い日は従来と同じ指紋のまま（導入時に全日を再送しない）
+  return weight == null ? base : (base || "#") + "@" + weight;
 }
 function loadSyncState() { try { return JSON.parse(lsGet(SYNC_STATE_KEY) || "{}"); } catch { return {}; } }
 
@@ -839,8 +1062,8 @@ async function flushSync(force) {
     const medsSig = JSON.stringify(meds.map(m => [m.id, m.name, m.color]));
     const days = {}, sigs = {};
     for (const d of new Set([...Object.keys(records), ...Object.keys(sentDays)])) {
-      const counts = countsOf(records[d]), note = noteOf(records[d]), sig = sigOf(counts, note);
-      if (sig !== (sentDays[d] || "")) { days[d] = { meds: counts, note }; sigs[d] = sig; }
+      const counts = countsOf(records[d]), note = noteOf(records[d]), weight = weightOf(records[d]), sig = sigOf(counts, note, weight);
+      if (sig !== (sentDays[d] || "")) { days[d] = { meds: counts, note, weight }; sigs[d] = sig; }
     }
     const medsChanged = st.meds !== medsSig;
     if (!medsChanged && !Object.keys(days).length) { if (force) setSyncStatus("送るものはありません（同期済み）"); return; }
@@ -862,17 +1085,18 @@ async function restoreFromServer() {
   try {
     setSyncStatus("取得中…");
     const data = await syncCall({ action: "get" });
-    const notes = data.notes || {};
-    const n = new Set([...Object.keys(data.days || {}), ...Object.keys(notes)]).size;
-    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で復元します。\n同じ日の服薬回数と日記は、サーバの内容で上書きされます（写真は変わりません）。よろしいですか？`)) {
+    const notes = data.notes || {}, weights = data.weights || {};
+    const n = new Set([...Object.keys(data.days || {}), ...Object.keys(notes), ...Object.keys(weights)]).size;
+    if (!confirm(`サーバの記録（薬 ${data.meds.length} 件・${n} 日分）で復元します。\n同じ日の服薬回数・体重・日記は、サーバの内容で上書きされます（写真は変わりません）。よろしいですか？`)) {
       setSyncStatus(""); return;
     }
     if (data.meds.length) meds = data.meds.map(m => ({ id: m.id, name: m.name, color: m.color }));
-    for (const d of new Set([...Object.keys(data.days || {}), ...Object.keys(notes)])) {
+    for (const d of new Set([...Object.keys(data.days || {}), ...Object.keys(notes), ...Object.keys(weights)])) {
       if (!records[d]) records[d] = { meds: {}, note: "" };
       // サーバにある項目だけを上書きする（サーバに無い日記を、端末内の日記ごと消さない）
       if (data.days && d in data.days) records[d].meds = { ...data.days[d] };
       if (d in notes) records[d].note = notes[d];
+      if (d in weights) records[d].weight = Number(weights[d]);
     }
     saveMeds(); saveRecords();
     renderCalendar(); renderMedManager();
@@ -896,17 +1120,21 @@ function setupSync() {
 
 // ── Events ──
 document.getElementById("btn-prev").addEventListener("click", () => {
+  if (viewMode === "week") { weekStart = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() - 7); renderCalendar(); return; }
   if (curMonth === 0) { curYear--; curMonth = 11; } else curMonth--;
   renderCalendar();
 });
 document.getElementById("btn-next").addEventListener("click", () => {
+  if (viewMode === "week") { weekStart = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7); renderCalendar(); return; }
   if (curMonth === 11) { curYear++; curMonth = 0; } else curMonth++;
   renderCalendar();
 });
 document.getElementById("btn-today").addEventListener("click", () => {
   const t = new Date(); curYear = t.getFullYear(); curMonth = t.getMonth();
+  weekStart = startOfWeek(t);
   renderCalendar();
 });
+document.getElementById("btn-view").addEventListener("click", () => setViewMode(viewMode === "week" ? "month" : "week"));
 document.getElementById("btn-gear").addEventListener("click", () => {
   renderMedManager();
   document.getElementById("mgr-overlay").classList.remove("hidden");
@@ -954,6 +1182,7 @@ document.getElementById("diary-textarea").addEventListener("input", e => {
     if (el.dataset.key === key) el.classList.add("selected");
   });
 });
+document.getElementById("weight-input").addEventListener("input", handleWeightInput);
 document.getElementById("photo-input").addEventListener("change", handlePhotoInput);
 document.getElementById("photo-viewer").addEventListener("click", e => {
   e.currentTarget.classList.add("hidden");
